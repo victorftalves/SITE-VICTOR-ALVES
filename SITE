@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Victor Alves - Comunicação Política</title>
+    <!-- Inclui o framework Tailwind CSS via CDN para um design moderno e responsivo -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Define a fonte padrão para o corpo da página */
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <!-- Cabeçalho da página -->
+    <header class="bg-[#23266D] text-white py-6 text-center shadow-lg animate-fade-down">
+        <div class="container mx-auto">
+            <h1 class="text-4xl font-bold">Victor Alves</h1>
+            <p class="mt-2 text-lg">Comunicação Política e Estratégia Eleitoral</p>
+            <nav class="mt-4 flex flex-wrap justify-center space-x-4 md:space-x-8">
+                <a href="#quem" class="text-white hover:text-[#79B858] font-semibold transition-colors duration-300">Quem Sou Eu</a>
+                <a href="#postagens" class="text-white hover:text-[#79B858] font-semibold transition-colors duration-300">Postagens</a>
+                <a href="#campanhas" class="text-white hover:text-[#79B858] font-semibold transition-colors duration-300">Campanhas</a>
+                <a href="#depoimentos" class="text-white hover:text-[#79B858] font-semibold transition-colors duration-300">Depoimentos</a>
+                <a href="#instagram" class="text-white hover:text-[#79B858] font-semibold transition-colors duration-300">Instagram</a>
+                <a href="#ferramenta-gemini" class="text-white hover:text-[#79B858] font-semibold transition-colors duration-300">Ideias de Conteúdo</a>
+                <a href="#rascunhos-gemini" class="text-white hover:text-[#79B858] font-semibold transition-colors duration-300">Gerar Rascunhos</a>
+                <a href="#contato" class="text-white hover:text-[#79B858] font-semibold transition-colors duration-300">Contato</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Conteúdo principal -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- Seção "Quem Sou Eu" -->
+        <section id="quem" class="mb-10 bg-white p-6 rounded-xl shadow-md animate-fade-up">
+            <h2 class="text-3xl font-bold text-[#23266D] mb-4">Quem Sou Eu</h2>
+            <p class="text-lg">Sou Victor Alves, especialista em comunicação política, designer gráfico e estrategista de campanhas eleitorais vencedoras. Atuo transformando imagem e posicionamento em votos, com presença marcante em câmaras municipais e prefeituras do Pará.</p>
+        </section>
+
+        <!-- Seção "Postagens Recentes" -->
+        <section id="postagens" class="mb-10 animate-fade-up">
+            <h2 class="text-3xl font-bold text-[#23266D] mb-6">Postagens Recentes</h2>
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <h3 class="text-xl font-bold text-[#23266D]">📌 Vanderray: o vereador que virou presidente e entendeu o poder da imagem</h3>
+                    <p class="mt-2 text-gray-600">Transformamos sua imagem, redes e articulação com um plano de conteúdo estruturado. O resultado? A presidência da Câmara de Ananindeua.</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <h3 class="text-xl font-bold text-[#23266D]">📸 Bastidores de uma campanha vitoriosa</h3>
+                    <p class="mt-2 text-gray-600">Mostramos como os bastidores fortalecem a narrativa política e geram conexão real com o eleitorado.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Seção "Campanhas Vencidas" -->
+        <section id="campanhas" class="mb-10 animate-fade-up">
+            <h2 class="text-3xl font-bold text-[#23266D] mb-6">Campanhas Vencidas</h2>
+            <div class="grid gap-4">
+                <div class="bg-white p-4 rounded-xl shadow-md border-l-4 border-[#79B858]">
+                    <strong class="text-lg">Vanderray Silva</strong> – Vereador e atual Presidente da Câmara de Ananindeua (2024)
+                    <p class="mt-1 text-gray-600">Construção de imagem, identidade visual e estratégia digital vitoriosa.</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-md border-l-4 border-[#79B858]">
+                    <strong class="text-lg">Argeo</strong> – Vereador e Presidente da Câmara de Salinas (2020)
+                    <p class="mt-1 text-gray-600">Reposicionamento e fortalecimento de presença digital.</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-md border-l-4 border-[#79B858]">
+                    <strong class="text-lg">Ronie Silva</strong> – Deputado Estadual (2022)</strong>
+                    <p class="mt-1 text-gray-600">Gestão de redes sociais e planejamento estratégico de conteúdo durante o período eleitoral.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Seção de Depoimentos -->
+        <section id="depoimentos" class="mb-10 animate-fade-up">
+            <h2 class="text-3xl font-bold text-[#23266D] mb-6 text-center">O que meus clientes dizem</h2>
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-xl shadow-md border-t-4 border-gray-300">
+                    <p class="italic text-gray-700">"A visão estratégica de Victor foi fundamental para a nossa vitória. Sua capacidade de transformar nossa mensagem em conteúdo relevante para o eleitorado fez toda a diferença."</p>
+                    <p class="mt-4 font-bold">- Vanderray Silva, Vereador e Presidente da Câmara de Ananindeua</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md border-t-4 border-gray-300">
+                    <p class="italic text-gray-700">"O trabalho de Victor nos ajudou a alcançar um novo patamar de engajamento nas redes sociais. Seu profissionalismo e criatividade são inestimáveis para qualquer campanha."</p>
+                    <p class="mt-4 font-bold">- Argeo, Vereador e Presidente da Câmara de Salinas</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Seção "Feed do Instagram" -->
+        <section id="instagram" class="mb-10 animate-fade-up">
+            <h2 class="text-3xl font-bold text-[#23266D] mb-6">Feed do Instagram</h2>
+            <div class="flex justify-center mt-4">
+                <iframe src="https://snapwidget.com/embed/1033515" class="w-full max-w-xl h-[500px] border-none rounded-xl shadow-md" allowtransparency="true"></iframe>
+            </div>
+            <p class="mt-4 text-center text-gray-600">Siga <a href="https://www.instagram.com/ovictormarketing" target="_blank" class="text-[#23266D] hover:underline">@ovictormarketing</a> para mais conteúdos.</p>
+        </section>
+        
+        <!-- Seção para a ferramenta Gemini de Geração de Conteúdo -->
+        <section id="ferramenta-gemini" class="mb-10 animate-fade-up">
+            <div class="bg-white p-6 rounded-xl shadow-md">
+                <h2 class="text-3xl font-bold text-[#23266D] mb-4">Gerador de Ideias de Conteúdo ✨</h2>
+                <p class="text-gray-700 mb-4">Use o poder da IA para gerar ideias para sua campanha. Descreva um tema ou objetivo político e receba sugestões instantâneas.</p>
+                <textarea id="tema-input" class="w-full h-24 p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#79B858]" placeholder="Ex: 'Promover a transparência na gestão pública' ou 'Defender pautas ambientais para a região amazônica'"></textarea>
+                <select id="tipo-conteudo" class="w-full mt-4 p-3 rounded-lg border border-gray-300 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#79B858]">
+                    <option value="slogans">Slogans de Campanha</option>
+                    <option value="posts">Ideias de Posts para Redes Sociais</option>
+                    <option value="falas">Pontos de Discussão (Falantes)</option>
+                </select>
+                <button id="gerar-btn" class="w-full mt-4 py-3 bg-[#79B858] text-white font-bold rounded-lg hover:bg-[#6a9b4d] transition-colors duration-300">Gerar Ideias ✨</button>
+                <div id="resultados-gemini" class="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg whitespace-pre-wrap"></div>
+            </div>
+        </section>
+
+        <!-- Nova seção para o Gerador de Rascunhos de Comunicação -->
+        <section id="rascunhos-gemini" class="mb-10 animate-fade-up">
+            <div class="bg-white p-6 rounded-xl shadow-md">
+                <h2 class="text-3xl font-bold text-[#23266D] mb-4">Gerador de Rascunhos de Comunicação ✨</h2>
+                <p class="text-gray-700 mb-4">Crie rascunhos completos para discursos, e-mails ou posts de blog. Descreva o tema e a IA fará o trabalho de redação.</p>
+                <textarea id="tema-rascunho-input" class="w-full h-24 p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#79B858]" placeholder="Ex: 'Discurso para arrecadação de fundos focado em educação'"></textarea>
+                <select id="tipo-rascunho-select" class="w-full mt-4 p-3 rounded-lg border border-gray-300 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#79B858]">
+                    <option value="discurso">Discurso Político (Curto)</option>
+                    <option value="email">E-mail para Apoiadores</option>
+                    <option value="blog">Post de Blog (Breve)</option>
+                </select>
+                <button id="gerar-rascunho-btn" class="w-full mt-4 py-3 bg-[#23266D] text-white font-bold rounded-lg hover:bg-gray-800 transition-colors duration-300">Gerar Rascunho ✨</button>
+                <div id="resultados-rascunho-gemini" class="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg whitespace-pre-wrap"></div>
+            </div>
+        </section>
+
+        <!-- Seção de Contato com formulário -->
+        <section id="contato" class="mb-10 animate-fade-up">
+            <h2 class="text-3xl font-bold text-[#23266D] mb-6">Contato</h2>
+            <div class="bg-white p-6 rounded-xl shadow-md">
+                <form class="space-y-4">
+                    <div>
+                        <label for="nome" class="block text-sm font-medium text-gray-700">Nome</label>
+                        <input type="text" id="nome" name="nome" class="mt-1 block w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#79B858]">
+                    </div>
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-700">E-mail</label>
+                        <input type="email" id="email" name="email" class="mt-1 block w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#79B858]">
+                    </div>
+                    <div>
+                        <label for="mensagem" class="block text-sm font-medium text-gray-700">Mensagem</label>
+                        <textarea id="mensagem" name="mensagem" rows="4" class="mt-1 block w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#79B858]"></textarea>
+                    </div>
+                    <button type="submit" class="w-full py-3 bg-[#23266D] text-white font-bold rounded-md hover:bg-gray-800 transition-colors duration-300">Enviar Mensagem</button>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <!-- Rodapé da página -->
+    <footer class="bg-[#23266D] text-white py-6 text-center animate-fade-up">
+        <p>© 2025 Victor Alves - Todos os direitos reservados</p>
+    </footer>
+
+    <!-- Script JavaScript para as funcionalidades da API Gemini -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Elementos para a Ferramenta de Geração de Ideias
+            const gerarBtn = document.getElementById('gerar-btn');
+            const temaInput = document.getElementById('tema-input');
+            const tipoConteudoSelect = document.getElementById('tipo-conteudo');
+            const resultadosDiv = document.getElementById('resultados-gemini');
+
+            // Elementos para o Gerador de Rascunhos de Comunicação
+            const gerarRascunhoBtn = document.getElementById('gerar-rascunho-btn');
+            const temaRascunhoInput = document.getElementById('tema-rascunho-input');
+            const tipoRascunhoSelect = document.getElementById('tipo-rascunho-select');
+            const resultadosRascunhoDiv = document.getElementById('resultados-rascunho-gemini');
+
+            // Função genérica para chamar a API Gemini com repetição exponencial
+            const callGeminiAPI = async (prompt, outputDiv) => {
+                const chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+                const payload = { contents: chatHistory };
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+                const maxRetries = 5;
+                let retryCount = 0;
+                let response;
+
+                while (retryCount < maxRetries) {
+                    try {
+                        response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        if (response.status !== 429) {
+                            break;
+                        }
+                        console.warn(`Taxa de limite excedida. Tentando novamente em ${Math.pow(2, retryCount)} segundos...`);
+                        await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
+                        retryCount++;
+                    } catch (e) {
+                        console.error("Erro ao fazer a chamada da API. Tentando novamente...", e);
+                        await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
+                        retryCount++;
+                    }
+                }
+
+                if (!response || !response.ok) {
+                    throw new Error(`Erro na API: ${response ? response.statusText : 'Resposta nula'}`);
+                }
+
+                const result = await response.json();
+                const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                if (text) {
+                    outputDiv.innerHTML = `<p>${text.replace(/\n/g, '<br>')}</p>`;
+                } else {
+                    outputDiv.innerHTML = '<p class="text-yellow-500">Não foi possível gerar conteúdo. Por favor, tente novamente com um tema diferente.</p>';
+                }
+            };
+
+            // Event listener para o Gerador de Ideias de Conteúdo
+            gerarBtn.addEventListener('click', async () => {
+                const tema = temaInput.value.trim();
+                const tipoConteudo = tipoConteudoSelect.value;
+
+                if (!tema) {
+                    resultadosDiv.innerHTML = '<p class="text-red-500">Por favor, insira um tema para gerar conteúdo.</p>';
+                    return;
+                }
+
+                resultadosDiv.innerHTML = '<p class="text-gray-500 italic">Gerando ideias, por favor aguarde...</p>';
+
+                let prompt;
+                switch (tipoConteudo) {
+                    case 'slogans':
+                        prompt = `Gere 3 slogans curtos e impactantes para uma campanha de comunicação política sobre o seguinte tema: "${tema}".`;
+                        break;
+                    case 'posts':
+                        prompt = `Gere 3 ideias de posts para redes sociais (com título e uma breve descrição) sobre o tema de comunicação política: "${tema}".`;
+                        break;
+                    case 'falas':
+                        prompt = `Gere 3 pontos de discussão ou falas curtas e persuasivas para um político usar em discursos ou entrevistas, sobre o tema: "${tema}".`;
+                        break;
+                }
+
+                try {
+                    await callGeminiAPI(prompt, resultadosDiv);
+                } catch (error) {
+                    console.error('Erro na chamada da API:', error);
+                    resultadosDiv.innerHTML = '<p class="text-red-500">Ocorreu um erro ao conectar com o serviço. Verifique o console para mais detalhes.</p>';
+                }
+            });
+
+            // Event listener para o Gerador de Rascunhos de Comunicação
+            gerarRascunhoBtn.addEventListener('click', async () => {
+                const tema = temaRascunhoInput.value.trim();
+                const tipoRascunho = tipoRascunhoSelect.value;
+
+                if (!tema) {
+                    resultadosRascunhoDiv.innerHTML = '<p class="text-red-500">Por favor, insira um tema para gerar o rascunho.</p>';
+                    return;
+                }
+
+                resultadosRascunhoDiv.innerHTML = '<p class="text-gray-500 italic">Gerando rascunho, por favor aguarde...</p>';
+
+                let prompt;
+                switch (tipoRascunho) {
+                    case 'discurso':
+                        prompt = `Crie um rascunho de discurso político curto e inspirador sobre o tema e objetivo: "${tema}". O discurso deve ter uma introdução, três pontos principais e uma conclusão com um apelo à ação.`;
+                        break;
+                    case 'email':
+                        prompt = `Escreva um rascunho de e-mail para apoiadores de uma campanha política. O e-mail deve ser sobre o tema e objetivo: "${tema}". Ele deve ser motivacional e terminar com um pedido de engajamento.`;
+                        break;
+                    case 'blog':
+                        prompt = `Escreva um rascunho de um breve post de blog político sobre o tema e objetivo: "${tema}". O post deve ser objetivo e fácil de ler, com um título e um texto de até 200 palavras.`;
+                        break;
+                }
+
+                try {
+                    await callGeminiAPI(prompt, resultadosRascunhoDiv);
+                } catch (error) {
+                    console.error('Erro na chamada da API:', error);
+                    resultadosRascunhoDiv.innerHTML = '<p class="text-red-500">Ocorreu um erro ao conectar com o serviço. Verifique o console para mais detalhes.</p>';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
