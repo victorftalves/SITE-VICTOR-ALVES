@@ -1,837 +1,175 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Victor Alves - Comunicação Política</title>
-    <!-- Inclui o framework Tailwind CSS via CDN para um design moderno e responsivo -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Inclui a biblioteca de ícones Font Awesome para os botões -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
-    <style>
-        /* Define a fonte padrão para o corpo da página */
-        body { font-family: 'Inter', sans-serif; }
-        
-        /* Animação para a entrada das seções, combinando fade e slide up */
-        @keyframes fadeInSlideUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
+import { useState } from 'react';
+import { createRoot } from 'react-dom/client';
+
+const App = () => {
+  // Estado para armazenar o prompt do usuário
+  const [prompt, setPrompt] = useState('');
+  // Estado para armazenar o texto gerado pela IA
+  const [generatedText, setGeneratedText] = useState('');
+  // Estado para controlar o estado de carregamento durante a chamada da API
+  const [isLoading, setIsLoading] = useState(false);
+  // Estado para armazenar mensagens de erro
+  const [error, setError] = useState(null);
+
+  // Função assíncrona para chamar a API de geração de texto
+  const generateText = async () => {
+    // Limpa os estados de texto gerado e erro antes de uma nova chamada
+    setGeneratedText('');
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      // Prepara o histórico da conversa com o prompt do usuário
+      let chatHistory = [];
+      chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+      const payload = { contents: chatHistory };
+
+      // O API key é gerenciado automaticamente pelo ambiente, então a string pode ser vazia
+      const apiKey = "";
+      // URL da API para o modelo Gemini 2.5 Flash
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+      let response;
+      let result;
+      let retries = 0;
+      const maxRetries = 5;
+      const initialDelay = 1000; // 1 segundo
+
+      // Implementa o backoff exponencial para lidar com limites de taxa
+      while (retries < maxRetries) {
+        try {
+          response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+
+          // Se a resposta for bem-sucedida, saia do loop
+          if (response.ok) {
+            result = await response.json();
+            break;
+          } else if (response.status === 429) {
+            // Se for um erro de limite de taxa (429), tente novamente
+            retries++;
+            const delay = initialDelay * Math.pow(2, retries - 1);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            console.log(`Tentativa ${retries} de ${maxRetries}: Limite de taxa atingido. Tentando novamente em ${delay}ms.`);
+          } else {
+            // Outros erros
+            const errorText = await response.text();
+            throw new Error(`Erro na API: ${response.status} - ${errorText}`);
+          }
+        } catch (fetchError) {
+          if (retries === maxRetries - 1) {
+            throw fetchError;
+          }
+          retries++;
+          const delay = initialDelay * Math.pow(2, retries - 1);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          console.log(`Tentativa ${retries} de ${maxRetries}: Erro de rede. Tentando novamente em ${delay}ms.`);
+        }
+      }
+
+      if (result && result.candidates && result.candidates.length > 0 &&
+          result.candidates[0].content && result.candidates[0].content.parts &&
+          result.candidates[0].content.parts.length > 0) {
+        // Extrai o texto da resposta e atualiza o estado
+        const text = result.candidates[0].content.parts[0].text;
+        setGeneratedText(text);
+      } else {
+        // Lida com casos em que a estrutura da resposta é inesperada
+        setError('A resposta da API está vazia ou com formato incorreto.');
+      }
+    } catch (err) {
+      // Captura e exibe qualquer erro que ocorra
+      setError(`Ocorreu um erro: ${err.message}`);
+      console.error(err);
+    } finally {
+      // Sempre define o estado de carregamento como falso no final
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-900 text-gray-100 flex flex-col items-center p-4 sm:p-8 font-sans">
+      <div className="w-full max-w-4xl bg-gray-800 p-6 sm:p-8 rounded-2xl shadow-lg border border-gray-700">
+        <h1 className="text-3xl sm:text-4xl font-bold text-center mb-6 text-indigo-400">Gerador de Texto Gemini</h1>
+        <p className="text-center text-gray-400 mb-8">
+          Digite um prompt e veja a IA gerar uma resposta.
+        </p>
+
+        {/* Área de entrada do prompt */}
+        <textarea
+          className="w-full h-32 p-4 mb-4 text-gray-200 bg-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-300 placeholder-gray-400 resize-none"
+          placeholder="Exemplo: Escreva um poema sobre o mar e o pôr do sol..."
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+        ></textarea>
+
+        {/* Botão para gerar o texto */}
+        <button
+          onClick={generateText}
+          disabled={isLoading || !prompt}
+          className={`w-full py-3 px-6 rounded-xl font-semibold text-lg transition-all duration-300
+            ${isLoading
+              ? 'bg-indigo-700 cursor-not-allowed'
+              : 'bg-indigo-600 hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-800'
             }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        /* Efeito de pulso para os botões */
-        @keyframes pulseShadow {
-            0% { box-shadow: 0 0 0 0 rgba(121, 184, 88, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(121, 184, 88, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(121, 184, 88, 0); }
-        }
+          `}
+        >
+          {isLoading ? 'Gerando...' : 'Gerar'}
+        </button>
 
-        /* Animação para o "desenho" da linha do tempo */
-        @keyframes drawLine {
-            from { width: 0; }
-            to { width: 100%; }
-        }
-
-        /* Classe que aplica a animação de fade in e slide up para as seções */
-        .animated-section {
-            opacity: 0;
-            transform: translateY(30px);
-            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
-        }
-
-        .animated-section.is-visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        /* Estilos para o ícone de carregamento */
-        .spinner {
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-left-color: #ffffff;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* Gradiente para o cabeçalho e rodapé com textura moderna */
-        .header-gradient, .footer-gradient {
-            /* Adiciona um padrão de pontos brancos com opacidade baixa sobre o gradiente principal */
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 4' width='4' height='4'%3E%3Cpath fill='%23ffffff' fill-opacity='0.1' d='M1 3h1v1H1V3zm2-2h1v1H3V1z'%3E%3C/path%3E%3C/svg%3E"),
-                            linear-gradient(to right, #23266D, #3F51B5);
-            background-size: 4px 4px, 100% 100%; /* Ajusta o tamanho da textura e do gradiente */
-            background-blend-mode: overlay; /* Mistura os dois backgrounds para um efeito sutil */
-        }
-
-        /* Efeito de sombra para as seções */
-        .card-shadow {
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        }
-
-        /* Estilos para a linha do tempo horizontal */
-        .timeline-scroll-container {
-            scroll-snap-type: x mandatory;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .timeline-card {
-            scroll-snap-align: center; /* Centraliza o card ao rolar */
-            flex-shrink: 0;
-        }
-
-        /* Estilos para a linha do tempo que será animada */
-        .timeline-line {
-            height: 4px;
-            background-color: #3F51B5;
-            position: absolute;
-            top: 50%;
-            left: 0;
-            transform: translateY(-50%);
-            animation: drawLine 1s ease-out forwards;
-        }
-        
-        /* Estilos para o ponto na linha do tempo */
-        .timeline-dot {
-            width: 1rem;
-            height: 1rem;
-            background-color: #3F51B5;
-            border: 2px solid white;
-            border-radius: 50%;
-            position: absolute;
-            top: -0.5rem;
-            left: 50%;
-            transform: translateX(-50%);
-            transition: all 0.3s ease-in-out;
-        }
-
-        /* Hover nos cards da timeline para destacar o ponto */
-        .timeline-card:hover .timeline-dot {
-            transform: scale(1.5) translateX(-33%);
-            background-color: #79B858;
-        }
-
-    </style>
-</head>
-<body class="bg-gray-50 text-gray-800">
-
-    <!-- Conteúdo principal da página (z-index para ficar acima do fundo) -->
-    <div class="relative z-10">
-        <!-- Cabeçalho da página com gradiente -->
-        <header class="header-gradient text-white py-8 text-center shadow-lg">
-            <div class="container mx-auto px-4">
-                <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight">Victor Alves</h1>
-                <p class="mt-2 text-lg md:text-xl font-light">Comunicação Política e Estratégia Eleitoral</p>
-                <nav class="mt-6 flex flex-wrap justify-center space-x-2 md:space-x-8">
-                    <a href="#quem" class="text-white hover:text-[#79B858] font-semibold transition-colors duration-300 transform hover:scale-105">Quem Sou Eu</a>
-                    <a href="#postagens" class="text-white hover:text-[#79B858] font-semibold transition-colors duration-300 transform hover:scale-105">Postagens</a>
-                    <a href="#campanhas" class="text-white hover:text-[#79B858] font-semibold transition-colors duration-300 transform hover:scale-105">Campanhas</a>
-                    <a href="#depoimentos" class="text-white hover:text-[#79B858] font-semibold transition-colors duration-300 transform hover:scale-105">Depoimentos</a>
-                    <a href="#linha-do-tempo" class="text-white hover:text-[#79B858] font-semibold transition-colors duration-300 transform hover:scale-105">Linha do Tempo</a>
-                    <a href="#slogan-analyzer" class="text-white hover:text-[#79B858] font-semibold transition-colors duration-300 transform hover:scale-105">Analisador</a>
-                    <a href="#bio-generator" class="text-white hover:text-[#79B858] font-semibold transition-colors duration-300 transform hover:scale-105">Gerador de Bio</a>
-                    <a href="#instagram" class="text-white hover:text-[#79B858] font-semibold transition-colors duration-300 transform hover:scale-105">Instagram</a>
-                    <a href="#ferramenta-gemini" class="text-white hover:text-[#79B858] font-semibold transition-colors duration-300 transform hover:scale-105">Ideias</a>
-                    <a href="#rascunhos-gemini" class="text-white hover:text-[#79B858] font-semibold transition-colors duration-300 transform hover:scale-105">Rascunhos</a>
-                    <a href="#contato" class="text-white hover:text-[#79B858] font-semibold transition-colors duration-300 transform hover:scale-105">Contato</a>
-                </nav>
+        {/* Área de exibição do resultado */}
+        <div className="mt-8">
+          {error && (
+            <div className="bg-red-900 text-red-300 p-4 rounded-xl border border-red-700">
+              <h3 className="font-bold mb-2">Erro:</h3>
+              <p>{error}</p>
             </div>
-        </header>
+          )}
 
-        <!-- Conteúdo principal -->
-        <main class="container mx-auto px-4 py-12">
-            <!-- Seção "Quem Sou Eu" -->
-            <section id="quem" class="mb-12 bg-white p-8 rounded-2xl card-shadow animated-section">
-                <h2 class="text-3xl font-extrabold text-[#23266D] mb-4 border-b-2 border-gray-200 pb-2">Quem Sou Eu</h2>
-                <p class="text-lg leading-relaxed">Sou Victor Alves, especialista em comunicação política, designer gráfico e estrategista de campanhas eleitorais vencedoras. Atuo transformando imagem e posicionamento em votos, com presença marcante em câmaras municipais e prefeituras do Pará.</p>
-            </section>
+          {!isLoading && !error && generatedText && (
+            <div className="bg-gray-700 p-6 rounded-2xl border border-gray-600 shadow-inner">
+              <h3 className="text-xl font-bold mb-4 text-indigo-300">Resposta da IA:</h3>
+              <div className="prose prose-invert max-w-none text-gray-300">
+                <p>{generatedText}</p>
+              </div>
+            </div>
+          )}
 
-            <!-- Seção "Postagens Recentes" -->
-            <section id="postagens" class="mb-12 animated-section">
-                <h2 class="text-3xl font-extrabold text-[#23266D] mb-6">Postagens Recentes</h2>
-                <div class="grid md:grid-cols-2 gap-8">
-                    <div class="bg-white p-6 rounded-2xl card-shadow transition-all duration-300 hover:scale-105 hover:shadow-2xl">
-                        <h3 class="text-xl font-bold text-[#23266D] mb-2">📌 Vanderray: o vereador que virou presidente e entendeu o poder da imagem</h3>
-                        <p class="mt-2 text-gray-600">Transformamos sua imagem, redes e articulação com um plano de conteúdo estruturado. O resultado? A presidência da Câmara de Ananindeua.</p>
-                    </div>
-                    <div class="bg-white p-6 rounded-2xl card-shadow transition-all duration-300 hover:scale-105 hover:shadow-2xl">
-                        <h3 class="text-xl font-bold text-[#23266D] mb-2">📸 Bastidores de uma campanha vitoriosa</h3>
-                        <p class="mt-2 text-gray-600">Mostramos como os bastidores fortalecem a narrativa política e geram conexão real com o eleitorado.</p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Seção "Campanhas Vencidas" -->
-            <section id="campanhas" class="mb-12 animated-section">
-                <h2 class="text-3xl font-extrabold text-[#23266D] mb-6">Campanhas Vencidas</h2>
-                <div class="grid gap-4">
-                    <div class="bg-white p-5 rounded-2xl card-shadow border-l-4 border-[#79B858] transition-all duration-300 hover:bg-gray-100 hover:scale-[1.02] hover:shadow-lg">
-                        <strong class="text-lg font-semibold">Vanderray Silva</strong> – Vereador e atual Presidente da Câmara de Ananindeua (2024)
-                        <p class="mt-1 text-gray-600 text-sm">Construção de imagem, identidade visual e estratégia digital vitoriosa.</p>
-                    </div>
-                    <div class="bg-white p-5 rounded-2xl card-shadow border-l-4 border-[#79B858] transition-all duration-300 hover:bg-gray-100 hover:scale-[1.02] hover:shadow-lg">
-                        <strong class="text-lg font-semibold">Argeo</strong> – Vereador e Presidente da Câmara de Salinas (2020)
-                        <p class="mt-1 text-gray-600 text-sm">Reposicionamento e fortalecimento de presença digital.</p>
-                    </div>
-                    <div class="bg-white p-5 rounded-2xl card-shadow border-l-4 border-[#79B858] transition-all duration-300 hover:bg-gray-100 hover:scale-[1.02] hover:shadow-lg">
-                        <strong class="text-lg font-semibold">Ronie Silva</strong> – Deputado Estadual (2022)</strong>
-                        <p class="mt-1 text-gray-600 text-sm">Gestão de redes sociais e planejamento estratégico de conteúdo durante o período eleitoral.</p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Seção Linha do Tempo dos Presidentes do Brasil -->
-            <section id="linha-do-tempo" class="mb-12 animated-section">
-                <h2 class="text-3xl font-extrabold text-[#23266D] mb-6">Presidentes da República do Brasil (1889–presente) 🇧🇷</h2>
-                <div class="relative bg-white p-8 rounded-2xl card-shadow overflow-x-auto timeline-scroll-container">
-                    <!-- Linha principal da linha do tempo com animação de desenho -->
-                    <div id="timeline-line" class="absolute top-1/2 left-0 h-1 bg-[#3F51B5] w-full origin-left transform scale-x-0"></div>
-                    <div class="flex space-x-8 pb-4">
-                        <!-- Cards de cada presidente, com informações e imagem placeholders -->
-                        <div class="timeline-card w-64 bg-gray-50 p-4 rounded-xl border-t-4 border-[#79B858] transition-all duration-300 hover:scale-105 hover:shadow-lg relative">
-                            <div class="timeline-dot"></div>
-                            <img src="https://placehold.co/100x100/3F51B5/FFFFFF?text=D.F." alt="Imagem de Deodoro da Fonseca" class="rounded-full w-20 h-20 mx-auto mb-4 border-2 border-white shadow-md">
-                            <h3 class="text-xl font-bold text-[#23266D] text-center">Deodoro da Fonseca</h3>
-                            <p class="text-gray-500 text-sm text-center">1889–1891</p>
-                            <p class="mt-2 text-sm text-gray-600 text-center">Primeiro presidente após a Proclamação da República, governou com um regime militar provisório.</p>
-                        </div>
-                        <div class="timeline-card w-64 bg-gray-50 p-4 rounded-xl border-t-4 border-[#79B858] transition-all duration-300 hover:scale-105 hover:shadow-lg relative">
-                            <div class="timeline-dot"></div>
-                            <img src="https://placehold.co/100x100/3F51B5/FFFFFF?text=F.P." alt="Imagem de Floriano Peixoto" class="rounded-full w-20 h-20 mx-auto mb-4 border-2 border-white shadow-md">
-                            <h3 class="text-xl font-bold text-[#23266D] text-center">Floriano Peixoto</h3>
-                            <p class="text-gray-500 text-sm text-center">1891–1894</p>
-                            <p class="mt-2 text-sm text-gray-600 text-center">Conhecido como o "Marechal de Ferro" por sua firmeza em consolidar a República.</p>
-                        </div>
-                        <div class="timeline-card w-64 bg-gray-50 p-4 rounded-xl border-t-4 border-[#79B858] transition-all duration-300 hover:scale-105 hover:shadow-lg relative">
-                            <div class="timeline-dot"></div>
-                            <img src="https://placehold.co/100x100/3F51B5/FFFFFF?text=P.M." alt="Imagem de Prudente de Morais" class="rounded-full w-20 h-20 mx-auto mb-4 border-2 border-white shadow-md">
-                            <h3 class="text-xl font-bold text-[#23266D] text-center">Prudente de Morais</h3>
-                            <p class="text-gray-500 text-sm text-center">1894–1898</p>
-                            <p class="mt-2 text-sm text-gray-600 text-center">Primeiro presidente civil do Brasil, marcou o fim do governo dos militares.</p>
-                        </div>
-                        <div class="timeline-card w-64 bg-gray-50 p-4 rounded-xl border-t-4 border-[#79B858] transition-all duration-300 hover:scale-105 hover:shadow-lg relative">
-                            <div class="timeline-dot"></div>
-                            <img src="https://placehold.co/100x100/3F51B5/FFFFFF?text=C.S." alt="Imagem de Campos Sales" class="rounded-full w-20 h-20 mx-auto mb-4 border-2 border-white shadow-md">
-                            <h3 class="text-xl font-bold text-[#23266D] text-center">Campos Sales</h3>
-                            <p class="text-gray-500 text-sm text-center">1898–1902</p>
-                            <p class="mt-2 text-sm text-gray-600 text-center">Criou a "política dos governadores", uma base de apoio para seu governo.</p>
-                        </div>
-                        <div class="timeline-card w-64 bg-gray-50 p-4 rounded-xl border-t-4 border-[#79B858] transition-all duration-300 hover:scale-105 hover:shadow-lg relative">
-                            <div class="timeline-dot"></div>
-                            <img src="https://placehold.co/100x100/3F51B5/FFFFFF?text=R.A." alt="Imagem de Rodrigues Alves" class="rounded-full w-20 h-20 mx-auto mb-4 border-2 border-white shadow-md">
-                            <h3 class="text-xl font-bold text-[#23266D] text-center">Rodrigues Alves</h3>
-                            <p class="text-gray-500 text-sm text-center">1902–1906</p>
-                            <p class="mt-2 text-sm text-gray-600 text-center">Responsável pela reforma urbana e sanitária da cidade do Rio de Janeiro.</p>
-                        </div>
-                        <div class="timeline-card w-64 bg-gray-50 p-4 rounded-xl border-t-4 border-[#79B858] transition-all duration-300 hover:scale-105 hover:shadow-lg relative">
-                            <div class="timeline-dot"></div>
-                            <img src="https://placehold.co/100x100/3F51B5/FFFFFF?text=A.P." alt="Imagem de Afonso Pena" class="rounded-full w-20 h-20 mx-auto mb-4 border-2 border-white shadow-md">
-                            <h3 class="text-xl font-bold text-[#23266D] text-center">Afonso Pena</h3>
-                            <p class="text-gray-500 text-sm text-center">1906–1909</p>
-                            <p class="mt-2 text-sm text-gray-600 text-center">Faleceu no exercício do cargo, sendo o primeiro presidente a não terminar o mandato.</p>
-                        </div>
-                        <div class="timeline-card w-64 bg-gray-50 p-4 rounded-xl border-t-4 border-[#79B858] transition-all duration-300 hover:scale-105 hover:shadow-lg relative">
-                            <div class="timeline-dot"></div>
-                            <img src="https://placehold.co/100x100/3F51B5/FFFFFF?text=N.P." alt="Imagem de Nilo Peçanha" class="rounded-full w-20 h-20 mx-auto mb-4 border-2 border-white shadow-md">
-                            <h3 class="text-xl font-bold text-[#23266D] text-center">Nilo Peçanha</h3>
-                            <p class="text-gray-500 text-sm text-center">1909–1910</p>
-                            <p class="mt-2 text-sm text-gray-600 text-center">Assumiu a presidência após a morte de Afonso Pena, em 1909.</p>
-                        </div>
-                        <div class="timeline-card w-64 bg-gray-50 p-4 rounded-xl border-t-4 border-[#79B858] transition-all duration-300 hover:scale-105 hover:shadow-lg relative">
-                            <div class="timeline-dot"></div>
-                            <img src="https://placehold.co/100x100/3F51B5/FFFFFF?text=H.F." alt="Imagem de Hermes da Fonseca" class="rounded-full w-20 h-20 mx-auto mb-4 border-2 border-white shadow-md">
-                            <h3 class="text-xl font-bold text-[#23266D] text-center">Hermes da Fonseca</h3>
-                            <p class="text-gray-500 text-sm text-center">1910–1914</p>
-                            <p class="mt-2 text-sm text-gray-600 text-center">Seu governo foi marcado por revoltas e a "Política das Salvações".</p>
-                        </div>
-                        <div class="timeline-card w-64 bg-gray-50 p-4 rounded-xl border-t-4 border-[#79B858] transition-all duration-300 hover:scale-105 hover:shadow-lg relative">
-                            <div class="timeline-dot"></div>
-                            <img src="https://placehold.co/100x100/3F51B5/FFFFFF?text=V.B." alt="Imagem de Venceslau Brás" class="rounded-full w-20 h-20 mx-auto mb-4 border-2 border-white shadow-md">
-                            <h3 class="text-xl font-bold text-[#23266D] text-center">Venceslau Brás</h3>
-                            <p class="text-gray-500 text-sm text-center">1914–1918</p>
-                            <p class="mt-2 text-sm text-gray-600 text-center">Declarou guerra à Alemanha na Primeira Guerra Mundial, em 1917.</p>
-                        </div>
-                        <div class="timeline-card w-64 bg-gray-50 p-4 rounded-xl border-t-4 border-[#79B858] transition-all duration-300 hover:scale-105 hover:shadow-lg relative">
-                            <div class="timeline-dot"></div>
-                            <img src="https://placehold.co/100x100/3F51B5/FFFFFF?text=D.M." alt="Imagem de Delfim Moreira" class="rounded-full w-20 h-20 mx-auto mb-4 border-2 border-white shadow-md">
-                            <h3 class="text-xl font-bold text-[#23266D] text-center">Delfim Moreira</h3>
-                            <p class="text-gray-500 text-sm text-center">1918–1919</p>
-                            <p class="mt-2 text-sm text-gray-600 text-center">Presidente interino que governou por um breve período devido à doença de Rodrigues Alves.</p>
-                        </div>
-                        <div class="timeline-card w-64 bg-gray-50 p-4 rounded-xl border-t-4 border-[#79B858] transition-all duration-300 hover:scale-105 hover:shadow-lg relative">
-                            <div class="timeline-dot"></div>
-                            <img src="https://placehold.co/100x100/3F51B5/FFFFFF?text=E.P." alt="Imagem de Epitácio Pessoa" class="rounded-full w-20 h-20 mx-auto mb-4 border-2 border-white shadow-md">
-                            <h3 class="text-xl font-bold text-[#23266D] text-center">Epitácio Pessoa</h3>
-                            <p class="text-gray-500 text-sm text-center">1919–1922</p>
-                            <p class="mt-2 text-sm text-gray-600 text-center">Seu governo foi marcado por reformas e pelo início da industrialização.</p>
-                        </div>
-                        <div class="timeline-card w-64 bg-gray-50 p-4 rounded-xl border-t-4 border-[#79B858] transition-all duration-300 hover:scale-105 hover:shadow-lg relative">
-                            <div class="timeline-dot"></div>
-                            <img src="https://placehold.co/100x100/3F51B5/FFFFFF?text=A.B." alt="Imagem de Artur Bernardes" class="rounded-full w-20 h-20 mx-auto mb-4 border-2 border-white shadow-md">
-                            <h3 class="text-xl font-bold text-[#23266D] text-center">Artur Bernardes</h3>
-                            <p class="text-gray-500 text-sm text-center">1922–1926</p>
-                            <p class="mt-2 text-sm text-gray-600 text-center">Enfrentou forte oposição política e militar, governando em estado de sítio.</p>
-                        </div>
-                        <div class="timeline-card w-64 bg-gray-50 p-4 rounded-xl border-t-4 border-[#79B858] transition-all duration-300 hover:scale-105 hover:shadow-lg relative">
-                            <div class="timeline-dot"></div>
-                            <img src="https://placehold.co/100x100/3F51B5/FFFFFF?text=W.L." alt="Imagem de Washington Luís" class="rounded-full w-20 h-20 mx-auto mb-4 border-2 border-white shadow-md">
-                            <h3 class="text-xl font-bold text-[#23266D] text-center">Washington Luís</h3>
-                            <p class="text-gray-500 text-sm text-center">1926–1930</p>
-                            <p class="mt-2 text-sm text-gray-600 text-center">Último presidente da República Velha, deposto pela Revolução de 1930.</p>
-                        </div>
-                        <div class="timeline-card w-64 bg-gray-50 p-4 rounded-xl border-t-4 border-[#79B858] transition-all duration-300 hover:scale-105 hover:shadow-lg relative">
-                            <div class="timeline-dot"></div>
-                            <img src="https://placehold.co/100x100/3F51B5/FFFFFF?text=J.P." alt="Imagem de Júlio Prestes" class="rounded-full w-20 h-20 mx-auto mb-4 border-2 border-white shadow-md">
-                            <h3 class="text-xl font-bold text-[#23266D] text-center">Júlio Prestes</h3>
-                            <p class="text-gray-500 text-sm text-center">eleito, mas não tomou posse (1930)</p>
-                            <p class="mt-2 text-sm text-gray-600 text-center">Venceu as eleições de 1930, mas foi impedido de assumir a presidência.</p>
-                        </div>
-                        <div class="timeline-card w-64 bg-gray-50 p-4 rounded-xl border-t-4 border-[#79B858] transition-all duration-300 hover:scale-105 hover:shadow-lg relative">
-                            <div class="timeline-dot"></div>
-                            <img src="https://placehold.co/100x100/3F51B5/FFFFFF?text=G.V." alt="Imagem de Getúlio Vargas" class="rounded-full w-20 h-20 mx-auto mb-4 border-2 border-white shadow-md">
-                            <h3 class="text-xl font-bold text-[#23266D] text-center">Getúlio Vargas</h3>
-                            <p class="text-gray-500 text-sm text-center">1930–1945 e 1951–1954</p>
-                            <p class="mt-2 text-sm text-gray-600 text-center">Figura central na história brasileira, governou por 19 anos, introduzindo leis trabalhistas e modernizando o país.</p>
-                        </div>
-                        <div class="timeline-card w-64 bg-gray-50 p-4 rounded-xl border-t-4 border-[#79B858] transition-all duration-300 hover:scale-105 hover:shadow-lg relative">
-                            <div class="timeline-dot"></div>
-                            <img src="https://placehold.co/100x100/3F51B5/FFFFFF?text=J.L." alt="Imagem de José Linhares" class="rounded-full w-20 h-20 mx-auto mb-4 border-2 border-white shadow-md">
-                            <h3 class="text-xl font-bold text-[#23266D] text-center">José Linhares</h3>
-                            <p class="text-gray-500 text-sm text-center">1945–1946</p>
-                            <p class="mt-2 text-sm text-gray-600 text-center">Presidente provisório que assumiu após a saída de Getúlio Vargas.</p>
-                        </div>
-                        <div class="timeline-card w-64 bg-gray-50 p-4 rounded-xl border-t-4 border-[#79B858] transition-all duration-300 hover:scale-105 hover:shadow-lg relative">
-                            <div class="timeline-dot"></div>
-                            <img src="https://placehold.co/100x100/3F51B5/FFFFFF?text=E.D." alt="Imagem de Eurico Gaspar Dutra" class="rounded-full w-20 h-20 mx-auto mb-4 border-2 border-white shadow-md">
-                            <h3 class="text-xl font-bold text-[#23266D] text-center">Eurico Gaspar Dutra</h3>
-                            <p class="text-gray-500 text-sm text-center">1946–1951</p>
-                            <p class="mt-2 text-sm text-gray-600 text-center">Governou sob a nova constituição democrática, marcando o início da Quarta República.</p>
-                        </div>
-                        <div class="timeline-card w-64 bg-gray-50 p-4 rounded-xl border-t-4 border-[#79B858] transition-all duration-300 hover:scale-105 hover:shadow-lg relative">
-                            <div class="timeline-dot"></div>
-                            <img src="https://placehold.co/100x100/3F51B5/FFFFFF?text=C.F." alt="Imagem de Café Filho" class="rounded-full w-20 h-20 mx-auto mb-4 border-2 border-white shadow-md">
-                            <h3 class="text-xl font-bold text-[#23266D] text-center">Café Filho</h3>
-                            <p class="text-gray-500 text-sm text-center">1954–1955</p>
-                            <p class="mt-2 text-sm text-gray-600 text-center">Vice de Getúlio Vargas, assumiu a presidência após o suicídio do titular.</p>
-                        </div>
-                        <div class="timeline-card w-64 bg-gray-50 p-4 rounded-xl border-t-4 border-[#79B858] transition-all duration-300 hover:scale-105 hover:shadow-lg relative">
-                            <div class="timeline-dot"></div>
-                            <img src="https://placehold.co/100x100/3F51B5/FFFFFF?text=C.L." alt="Imagem de Carlos Luz" class="rounded-full w-20 h-20 mx-auto mb-4 border-2 border-white shadow-md">
-                            <h3 class="text-xl font-bold text-[#23266D] text-center">Carlos Luz</h3>
-                            <p class="text-gray-500 text-sm text-center">1955</p>
-                            <p class="mt-2 text-sm text-gray-600 text-center">Assumiu a presidência de forma interina por um período muito breve.</p>
-                        </div>
-                        <div class="timeline-card w-64 bg-gray-50 p-4 rounded-xl border-t-4 border-[#79B858] transition-all duration-300 hover:scale-105 hover:shadow-lg relative">
-                            <div class="timeline-dot"></div>
-                            <img src="https://placehold.co/100x100/3F51B5/FFFFFF?text=N.R." alt="Imagem de Nereu Ramos" class="rounded-full w-20 h-20 mx-auto mb-4 border-2 border-white shadow-md">
-                            <h3 class="text-xl font-bold text-[#23266D] text-center">Nereu Ramos</h3>
-                            <p class="text-gray-500 text-sm text-center">1955–1956</p>
-                            <p class="mt-2 text-sm text-gray-600 text-center">O último vice-presidente a assumir o poder antes da posse de JK.</p>
-                        </div>
-                        <div class="timeline-card w-64 bg-gray-50 p-4 rounded-xl border-t-4 border-[#79B858] transition-all duration-300 hover:scale-105 hover:shadow-lg relative">
-                            <div class="timeline-dot"></div>
-                            <img src="https://placehold.co/100x100/3F51B5/FFFFFF?text=J.K." alt="Imagem de Juscelino Kubitschek" class="rounded-full w-20 h-20 mx-auto mb-4 border-2 border-white shadow-md">
-                            <h3 class="text-xl font-bold text-[#23266D] text-center">Juscelino Kubitschek</h3>
-                            <p class="text-gray-500 text-sm text-center">1956–1961</p>
-                            <p class="mt-2 text-sm text-gray-600 text-center">Famoso por seu slogan "50 anos em 5" e pela construção de Brasília.</p>
-                        </div>
-                        <div class="timeline-card w-64 bg-gray-50 p-4 rounded-xl border-t-4 border-[#79B858] transition-all duration-300 hover:scale-105 hover:shadow-lg relative">
-                            <div class="timeline-dot"></div>
-                            <img src="https://placehold.co/100x100/3F51B5/FFFFFF?text=J.Q." alt="Imagem de Jânio Quadros" class="rounded-full w-20 h-20 mx-auto mb-4 border-2 border-white shadow-md">
-                            <h3 class="text-xl font-bold text-[#23266D] text-center">Jânio Quadros</h3>
-                            <p class="text-gray-500 text-sm text-center">1961</p>
-                            <p class="mt-2 text-sm text-gray-600 text-center">Eleito com o slogan "varre-varre vassourinha", renunciou ao cargo em 7 meses.</p>
-                        </div>
-                        <div class="timeline-card w-64 bg-gray-50 p-4 rounded-xl border-t-4 border-[#79B858] transition-all duration-300 hover:scale-105 hover:shadow-lg relative">
-                            <div class="timeline-dot"></div>
-                            <img src="https://placehold.co/100x100/3F51B5/FFFFFF?text=R.M." alt="Imagem de Ranieri Mazzilli" class="rounded-full w-20 h-20 mx-auto mb-4 border-2 border-white shadow-md">
-                            <h3 class="text-xl font-bold text-[#23266D] text-center">Ranieri Mazzilli</h3>
-                            <p class="text-gray-500 text-sm text-center">1961 e 1964</p>
-                            <p class="mt-2 text-sm text-gray-600 text-center">Presidente da Câmara dos Deputados, assumiu a presidência interinamente por duas vezes.</p>
-                        </div>
-                        <div class="timeline-card w-64 bg-gray-50 p-4 rounded-xl border-t-4 border-[#79B858] transition-all duration-300 hover:scale-105 hover:shadow-lg relative">
-                            <div class="timeline-dot"></div>
-                            <img src="https://placehold.co/100x100/3F51B5/FFFFFF?text=J.G." alt="Imagem de João Goulart" class="rounded-full w-20 h-20 mx-auto mb-4 border-2 border-white shadow-md">
-                            <h3 class="text-xl font-bold text-[#23266D] text-center">João Goulart</h3>
-                            <p class="text-gray-500 text-sm text-center">1961–1964</p>
-                            <p class="mt-2 text-sm text-gray-600 text-center">Seu governo terminou com o Golpe Militar de 1964, que o depôs.</p>
-                        </div>
-                        <div class="timeline-card w-64 bg-gray-50 p-4 rounded-xl border-t-4 border-[#79B858] transition-all duration-300 hover:scale-105 hover:shadow-lg relative">
-                            <div class="timeline-dot"></div>
-                            <img src="https://placehold.co/100x100/3F51B5/FFFFFF?text=C.B." alt="Imagem de Castelo Branco" class="rounded-full w-20 h-20 mx-auto mb-4 border-2 border-white shadow-md">
-                            <h3 class="text-xl font-bold text-[#23266D] text-center">Castelo Branco</h3>
-                            <p class="text-gray-500 text-sm text-center">1964–1967</p>
-                            <p class="mt-2 text-sm text-gray-600 text-center">Primeiro presidente do período da Ditadura Militar.</p>
-                        </div>
-                        <div class="timeline-card w-64 bg-gray-50 p-4 rounded-xl border-t-4 border-[#79B858] transition-all duration-300 hover:scale-105 hover:shadow-lg relative">
-                            <div class="timeline-dot"></div>
-                            <img src="https://placehold.co/100x100/3F51B5/FFFFFF?text=C.S." alt="Imagem de Costa e Silva" class="rounded-full w-20 h-20 mx-auto mb-4 border-2 border-white shadow-md">
-                            <h3 class="text-xl font-bold text-[#23266D] text-center">Costa e Silva</h3>
-                            <p class="text-gray-500 text-sm text-center">1967–1969</p>
-                            <p class="mt-2 text-sm text-gray-600 text-center">Assinou o AI-5, um dos atos mais repressivos da Ditadura Militar.</p>
-                        </div>
-                        <div class="timeline-card w-64 bg-gray-50 p-4 rounded-xl border-t-4 border-[#79B858] transition-all duration-300 hover:scale-105 hover:shadow-lg relative">
-                            <div class="timeline-dot"></div>
-                            <img src="https://placehold.co/100x100/3F51B5/FFFFFF?text=J.M." alt="Imagem da Junta Militar" class="rounded-full w-20 h-20 mx-auto mb-4 border-2 border-white shadow-md">
-                            <h3 class="text-xl font-bold text-[#23266D] text-center">Junta Militar</h3>
-                            <p class="text-gray-500 text-sm text-center">1969</p>
-                            <p class="mt-2 text-sm text-gray-600 text-center">Grupo de militares que governou o país interinamente após a morte de Costa e Silva.</p>
-                        </div>
-                        <div class="timeline-card w-64 bg-gray-50 p-4 rounded-xl border-t-4 border-[#79B858] transition-all duration-300 hover:scale-105 hover:shadow-lg relative">
-                            <div class="timeline-dot"></div>
-                            <img src="https://placehold.co/100x100/3F51B5/FFFFFF?text=E.M." alt="Imagem de Emílio Garrastazu Médici" class="rounded-full w-20 h-20 mx-auto mb-4 border-2 border-white shadow-md">
-                            <h3 class="text-xl font-bold text-[#23266D] text-center">Emílio Garrastazu Médici</h3>
-                            <p class="text-gray-500 text-sm text-center">1969–1974</p>
-                            <p class="mt-2 text-sm text-gray-600 text-center">Seu governo foi o mais repressivo do regime militar, mas também o do "milagre econômico".</p>
-                        </div>
-                        <div class="timeline-card w-64 bg-gray-50 p-4 rounded-xl border-t-4 border-[#79B858] transition-all duration-300 hover:scale-105 hover:shadow-lg relative">
-                            <div class="timeline-dot"></div>
-                            <img src="https://placehold.co/100x100/3F51B5/FFFFFF?text=E.G." alt="Imagem de Ernesto Geisel" class="rounded-full w-20 h-20 mx-auto mb-4 border-2 border-white shadow-md">
-                            <h3 class="text-xl font-bold text-[#23266D] text-center">Ernesto Geisel</h3>
-                            <p class="text-gray-500 text-sm text-center">1974–1979</p>
-                            <p class="mt-2 text-sm text-gray-600 text-center">Iniciou o processo de "abertura lenta, gradual e segura" da Ditadura Militar.</p>
-                        </div>
-                        <div class="timeline-card w-64 bg-gray-50 p-4 rounded-xl border-t-4 border-[#79B858] transition-all duration-300 hover:scale-105 hover:shadow-lg relative">
-                            <div class="timeline-dot"></div>
-                            <img src="https://placehold.co/100x100/3F51B5/FFFFFF?text=J.F." alt="Imagem de João Figueiredo" class="rounded-full w-20 h-20 mx-auto mb-4 border-2 border-white shadow-md">
-                            <h3 class="text-xl font-bold text-[#23266D] text-center">João Figueiredo</h3>
-                            <p class="text-gray-500 text-sm text-center">1979–1985</p>
-                            <p class="mt-2 text-sm text-gray-600 text-center">O último presidente militar, que concluiu a transição para a democracia.</p>
-                        </div>
-                        <div class="timeline-card w-64 bg-gray-50 p-4 rounded-xl border-t-4 border-[#79B858] transition-all duration-300 hover:scale-105 hover:shadow-lg relative">
-                            <div class="timeline-dot"></div>
-                            <img src="https://placehold.co/100x100/3F51B5/FFFFFF?text=T.N." alt="Imagem de Tancredo Neves" class="rounded-full w-20 h-20 mx-auto mb-4 border-2 border-white shadow-md">
-                            <h3 class="text-xl font-bold text-[#23266D] text-center">Tancredo Neves</h3>
-                            <p class="text-gray-500 text-sm text-center">eleito, mas faleceu antes de assumir (1985)</p>
-                            <p class="mt-2 text-sm text-gray-600 text-center">Primeiro presidente civil eleito indiretamente após a ditadura, mas faleceu antes da posse.</p>
-                        </div>
-                        <div class="timeline-card w-64 bg-gray-50 p-4 rounded-xl border-t-4 border-[#79B858] transition-all duration-300 hover:scale-105 hover:shadow-lg relative">
-                            <div class="timeline-dot"></div>
-                            <img src="https://placehold.co/100x100/3F51B5/FFFFFF?text=J.S." alt="Imagem de José Sarney" class="rounded-full w-20 h-20 mx-auto mb-4 border-2 border-white shadow-md">
-                            <h3 class="text-xl font-bold text-[#23266D] text-center">José Sarney</h3>
-                            <p class="text-gray-500 text-sm text-center">1985–1990</p>
-                            <p class="mt-2 text-sm text-gray-600 text-center">Assumiu a presidência após a morte de Tancredo Neves, encerrando o ciclo militar no poder.</p>
-                        </div>
-                        <div class="timeline-card w-64 bg-gray-50 p-4 rounded-xl border-t-4 border-[#79B858] transition-all duration-300 hover:scale-105 hover:shadow-lg relative">
-                            <div class="timeline-dot"></div>
-                            <img src="https://placehold.co/100x100/3F51B5/FFFFFF?text=F.C." alt="Imagem de Fernando Collor de Mello" class="rounded-full w-20 h-20 mx-auto mb-4 border-2 border-white shadow-md">
-                            <h3 class="text-xl font-bold text-[#23266D] text-center">Fernando Collor de Mello</h3>
-                            <p class="text-gray-500 text-sm text-center">1990–1992</p>
-                            <p class="mt-2 text-sm text-gray-600 text-center">Primeiro presidente eleito por voto direto após a Ditadura Militar, sofreu impeachment.</p>
-                        </div>
-                        <div class="timeline-card w-64 bg-gray-50 p-4 rounded-xl border-t-4 border-[#79B858] transition-all duration-300 hover:scale-105 hover:shadow-lg relative">
-                            <div class="timeline-dot"></div>
-                            <img src="https://placehold.co/100x100/3F51B5/FFFFFF?text=I.F." alt="Imagem de Itamar Franco" class="rounded-full w-20 h-20 mx-auto mb-4 border-2 border-white shadow-md">
-                            <h3 class="text-xl font-bold text-[#23266D] text-center">Itamar Franco</h3>
-                            <p class="text-gray-500 text-sm text-center">1992–1995</p>
-                            <p class="mt-2 text-sm text-gray-600 text-center">Vice de Collor, assumiu o cargo e foi o responsável por lançar o Plano Real.</p>
-                        </div>
-                        <div class="timeline-card w-64 bg-gray-50 p-4 rounded-xl border-t-4 border-[#79B858] transition-all duration-300 hover:scale-105 hover:shadow-lg relative">
-                            <div class="timeline-dot"></div>
-                            <img src="https://placehold.co/100x100/3F51B5/FFFFFF?text=FHC" alt="Imagem de Fernando Henrique Cardoso" class="rounded-full w-20 h-20 mx-auto mb-4 border-2 border-white shadow-md">
-                            <h3 class="text-xl font-bold text-[#23266D] text-center">Fernando Henrique Cardoso</h3>
-                            <p class="text-gray-500 text-sm text-center">1995–2003</p>
-                            <p class="mt-2 text-sm text-gray-600 text-center">Sociólogo e político que implementou e consolidou o Plano Real, estabilizando a economia.</p>
-                        </div>
-                        <div class="timeline-card w-64 bg-gray-50 p-4 rounded-xl border-t-4 border-[#79B858] transition-all duration-300 hover:scale-105 hover:shadow-lg relative">
-                            <div class="timeline-dot"></div>
-                            <img src="https://placehold.co/100x100/3F51B5/FFFFFF?text=L.S." alt="Imagem de Luiz Inácio Lula da Silva" class="rounded-full w-20 h-20 mx-auto mb-4 border-2 border-white shadow-md">
-                            <h3 class="text-xl font-bold text-[#23266D] text-center">Luiz Inácio Lula da Silva</h3>
-                            <p class="text-gray-500 text-sm text-center">2003–2011 e 2023–presente</p>
-                            <p class="mt-2 text-sm text-gray-600 text-center">Primeiro presidente operário, governou com foco em programas sociais e políticas de inclusão.</p>
-                        </div>
-                        <div class="timeline-card w-64 bg-gray-50 p-4 rounded-xl border-t-4 border-[#79B858] transition-all duration-300 hover:scale-105 hover:shadow-lg relative">
-                            <div class="timeline-dot"></div>
-                            <img src="https://placehold.co/100x100/3F51B5/FFFFFF?text=D.R." alt="Imagem de Dilma Rousseff" class="rounded-full w-20 h-20 mx-auto mb-4 border-2 border-white shadow-md">
-                            <h3 class="text-xl font-bold text-[#23266D] text-center">Dilma Rousseff</h3>
-                            <p class="text-gray-500 text-sm text-center">2011–2016</p>
-                            <p class="mt-2 text-sm text-gray-600 text-center">Primeira mulher a ocupar o cargo, foi reeleita e sofreu impeachment.</p>
-                        </div>
-                        <div class="timeline-card w-64 bg-gray-50 p-4 rounded-xl border-t-4 border-[#79B858] transition-all duration-300 hover:scale-105 hover:shadow-lg relative">
-                            <div class="timeline-dot"></div>
-                            <img src="https://placehold.co/100x100/3F51B5/FFFFFF?text=M.T." alt="Imagem de Michel Temer" class="rounded-full w-20 h-20 mx-auto mb-4 border-2 border-white shadow-md">
-                            <h3 class="text-xl font-bold text-[#23266D] text-center">Michel Temer</h3>
-                            <p class="text-gray-500 text-sm text-center">2016–2019</p>
-                            <p class="mt-2 text-sm text-gray-600 text-center">Vice de Dilma, assumiu após o impeachment e implementou reformas econômicas.</p>
-                        </div>
-                        <div class="timeline-card w-64 bg-gray-50 p-4 rounded-xl border-t-4 border-[#79B858] transition-all duration-300 hover:scale-105 hover:shadow-lg relative">
-                            <div class="timeline-dot"></div>
-                            <img src="https://placehold.co/100x100/3F51B5/FFFFFF?text=J.B." alt="Imagem de Jair Bolsonaro" class="rounded-full w-20 h-20 mx-auto mb-4 border-2 border-white shadow-md">
-                            <h3 class="text-xl font-bold text-[#23266D] text-center">Jair Bolsonaro</h3>
-                            <p class="text-gray-500 text-sm text-center">2019–2022</p>
-                            <p class="mt-2 text-sm text-gray-600 text-center">Ex-militar e deputado, governou com uma pauta de direita conservadora e liberal na economia.</p>
-                        </div>
-                        <div class="timeline-card w-64 bg-gray-50 p-4 rounded-xl border-t-4 border-[#79B858] transition-all duration-300 hover:scale-105 hover:shadow-lg relative">
-                            <div class="timeline-dot"></div>
-                            <img src="https://placehold.co/100x100/3F51B5/FFFFFF?text=L.S." alt="Imagem de Luiz Inácio Lula da Silva" class="rounded-full w-20 h-20 mx-auto mb-4 border-2 border-white shadow-md">
-                            <h3 class="text-xl font-bold text-[#23266D] text-center">Luiz Inácio Lula da Silva</h3>
-                            <p class="text-gray-500 text-sm text-center">2023–presente</p>
-                            <p class="mt-2 text-sm text-gray-600 text-center">Iniciou seu terceiro mandato focado na reconstrução de políticas sociais e ambientais.</p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Seção de Depoimentos -->
-            <section id="depoimentos" class="mb-12 animated-section">
-                <h2 class="text-3xl font-extrabold text-[#23266D] mb-6 text-center">O que meus clientes dizem</h2>
-                <div class="grid md:grid-cols-2 gap-8">
-                    <div class="bg-white p-8 rounded-2xl card-shadow border-t-4 border-[#79B858] transition-all duration-300 hover:scale-105 hover:shadow-2xl">
-                        <p class="italic text-gray-700">"A visão estratégica de Victor foi fundamental para a nossa vitória. Sua capacidade de transformar nossa mensagem em conteúdo relevante para o eleitorado fez toda a diferença."</p>
-                        <p class="mt-4 font-bold text-lg text-[#23266D]">- Vanderray Silva</p>
-                        <p class="text-sm text-gray-500">Vereador e Presidente da Câmara de Ananindeua</p>
-                    </div>
-                    <div class="bg-white p-8 rounded-2xl card-shadow border-t-4 border-[#79B858] transition-all duration-300 hover:scale-105 hover:shadow-2xl">
-                        <p class="italic text-gray-700">"O trabalho de Victor nos ajudou a alcançar um novo patamar de engajamento nas redes sociais. Seu profissionalismo e criatividade são inestimáveis para qualquer campanha."</p>
-                        <p class="mt-4 font-bold text-lg text-[#23266D]">- Argeo</p>
-                        <p class="text-sm text-gray-500">Vereador e Presidente da Câmara de Salinas</p>
-                    </div>
-                </div>
-            </section>
-            
-            <!-- Seção para a ferramenta Gemini de Analisador de Slogans -->
-            <section id="slogan-analyzer" class="mb-12 animated-section">
-                <div class="bg-white p-8 rounded-2xl card-shadow border-l-4 border-[#FFC107]">
-                    <h2 class="text-3xl font-extrabold text-[#23266D] mb-4">Analisador de Slogans ✨</h2>
-                    <p class="text-gray-700 mb-6">Insira um slogan de campanha e receba uma análise completa de sua força e impacto.</p>
-                    <textarea id="slogan-input" class="w-full h-24 p-4 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-[#FFC107] transition-colors duration-300" placeholder="Ex: 'Futuro Melhor Agora'"></textarea>
-                    <button id="analisar-slogan-btn" class="w-full mt-6 py-4 bg-[#FFC107] text-white font-bold text-lg rounded-xl hover:bg-[#ffb300] active:scale-95 transition-all duration-100 flex items-center justify-center space-x-2 shadow-lg">
-                        <span id="analisar-slogan-btn-text">Analisar Slogan ✨</span>
-                        <div id="analisar-slogan-btn-spinner" class="spinner hidden border-white border-l-[#ffb300]"></div>
-                    </button>
-                    <div id="resultados-slogan" class="mt-8 p-6 bg-gray-100 border border-gray-200 rounded-xl whitespace-pre-wrap min-h-[50px] relative transition-all duration-300"></div>
-                </div>
-            </section>
-            
-            <!-- Seção para a ferramenta Gemini de Gerador de Biografias Políticas -->
-            <section id="bio-generator" class="mb-12 animated-section">
-                <div class="bg-white p-8 rounded-2xl card-shadow border-l-4 border-[#1976D2]">
-                    <h2 class="text-3xl font-extrabold text-[#23266D] mb-4">Gerador de Biografias Políticas ✨</h2>
-                    <p class="text-gray-700 mb-6">Crie uma biografia profissional e impactante. Forneça o nome e os principais pontos da carreira do político.</p>
-                    <input type="text" id="bio-nome-input" class="w-full p-4 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-[#1976D2] transition-colors duration-300 mb-4" placeholder="Nome completo do político">
-                    <textarea id="bio-pontos-input" class="w-full h-24 p-4 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-[#1976D2] transition-colors duration-300" placeholder="Principais realizações, cargos, e visão política (ex: 'fundador de projeto social', 'vereador por 2 mandatos')"></textarea>
-                    <button id="gerar-bio-btn" class="w-full mt-6 py-4 bg-[#1976D2] text-white font-bold text-lg rounded-xl hover:bg-[#1565C0] active:scale-95 transition-all duration-100 flex items-center justify-center space-x-2 shadow-lg">
-                        <span id="gerar-bio-btn-text">Gerar Biografia ✨</span>
-                        <div id="gerar-bio-btn-spinner" class="spinner hidden border-white border-l-[#1565C0]"></div>
-                    </button>
-                    <div id="resultados-bio" class="mt-8 p-6 bg-gray-100 border border-gray-200 rounded-xl whitespace-pre-wrap min-h-[50px] relative transition-all duration-300"></div>
-                </div>
-            </section>
-
-            <!-- Seção "Feed do Instagram" -->
-            <section id="instagram" class="mb-12 animated-section">
-                <h2 class="text-3xl font-extrabold text-[#23266D] mb-6">Feed do Instagram</h2>
-                <div class="flex justify-center mt-4 bg-white p-6 rounded-2xl card-shadow">
-                    <!-- SnapWidget -->
-                    <iframe src="https://snapwidget.com/embed/1104442" class="snapwidget-widget" allowtransparency="true" frameborder="0" scrolling="no" style="border:none; overflow:hidden; width:100%; max-width:765px; height:689.9966666666667px" title="Posts from Instagram"></iframe>
-                </div>
-                <p class="mt-4 text-center text-gray-600">Siga <a href="https://www.instagram.com/ovictormarketing" target="_blank" class="text-[#23266D] font-bold hover:underline">@ovictormarketing</a> para mais conteúdos.</p>
-            </section>
-            
-            <!-- Seção para a ferramenta Gemini de Geração de Conteúdo -->
-            <section id="ferramenta-gemini" class="mb-12 animated-section">
-                <div class="bg-white p-8 rounded-2xl card-shadow border-l-4 border-[#79B858]">
-                    <h2 class="text-3xl font-extrabold text-[#23266D] mb-4">Gerador de Ideias de Conteúdo ✨</h2>
-                    <p class="text-gray-700 mb-6">Use o poder da IA para gerar ideias para sua campanha. Descreva um tema ou objetivo político e receba sugestões instantâneas.</p>
-                    <textarea id="tema-input" class="w-full h-24 p-4 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-[#79B858] transition-colors duration-300" placeholder="Ex: 'Promover a transparência na gestão pública' ou 'Defender pautas ambientais para a região amazônica'"></textarea>
-                    <select id="tipo-conteudo" class="w-full mt-4 p-4 rounded-xl border-2 border-gray-200 bg-white focus:outline-none focus:border-[#79B858] transition-colors duration-300">
-                        <option value="slogans">Slogans de Campanha</option>
-                        <option value="posts">Ideias de Posts para Redes Sociais</option>
-                        <option value="falas">Pontos de Discussão (Falantes)</option>
-                    </select>
-                    <button id="gerar-btn" class="w-full mt-6 py-4 bg-[#79B858] text-white font-bold text-lg rounded-xl hover:bg-[#6a9b4d] active:scale-95 transition-all duration-100 flex items-center justify-center space-x-2 shadow-lg">
-                        <span id="gerar-btn-text">Gerar Ideias ✨</span>
-                        <div id="gerar-btn-spinner" class="spinner hidden border-white border-l-[#6a9b4d]"></div>
-                    </button>
-                    <div id="resultados-gemini" class="mt-8 p-6 bg-gray-100 border border-gray-200 rounded-xl whitespace-pre-wrap min-h-[50px] relative transition-all duration-300"></div>
-                </div>
-            </section>
-
-            <!-- Nova seção para o Gerador de Rascunhos de Comunicação -->
-            <section id="rascunhos-gemini" class="mb-12 animated-section">
-                <div class="bg-white p-8 rounded-2xl card-shadow border-l-4 border-[#23266D]">
-                    <h2 class="text-3xl font-extrabold text-[#23266D] mb-4">Gerador de Rascunhos de Comunicação ✨</h2>
-                    <p class="text-gray-700 mb-6">Crie rascunhos completos para discursos, e-mails ou posts de blog. Descreva o tema e a IA fará o trabalho de redação.</p>
-                    <textarea id="tema-rascunho-input" class="w-full h-24 p-4 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-[#23266D] transition-colors duration-300" placeholder="Ex: 'Discurso para arrecadação de fundos focado em educação'"></textarea>
-                    <select id="tipo-rascunho-select" class="w-full mt-4 p-4 rounded-xl border-2 border-gray-200 bg-white focus:outline-none focus:border-[#23266D] transition-colors duration-300">
-                        <option value="discurso">Discurso Político (Curto)</option>
-                        <option value="email">E-mail para Apoiadores</option>
-                        <option value="blog">Post de Blog (Breve)</option>
-                    </select>
-                    <button id="gerar-rascunho-btn" class="w-full mt-6 py-4 bg-[#23266D] text-white font-bold text-lg rounded-xl hover:bg-gray-800 active:scale-95 transition-all duration-100 flex items-center justify-center space-x-2 shadow-lg">
-                        <span id="gerar-rascunho-btn-text">Gerar Rascunho ✨</span>
-                        <div id="gerar-rascunho-btn-spinner" class="spinner hidden border-white border-l-[#79B858]"></div>
-                    </button>
-                    <div id="resultados-rascunho-gemini" class="mt-8 p-6 bg-gray-100 border border-gray-200 rounded-xl whitespace-pre-wrap min-h-[50px] relative transition-all duration-300"></div>
-                </div>
-            </section>
-
-            <!-- Seção de Contato com formulário -->
-            <section id="contato" class="mb-12 animated-section">
-                <h2 class="text-3xl font-extrabold text-[#23266D] mb-6">Contato</h2>
-                <div class="bg-white p-8 rounded-2xl card-shadow">
-                    <form class="space-y-6">
-                        <div>
-                            <label for="nome" class="block text-sm font-medium text-gray-700">Nome</label>
-                            <input type="text" id="nome" name="nome" class="mt-1 block w-full p-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#79B858] transition-colors duration-300">
-                        </div>
-                        <div>
-                            <label for="email" class="block text-sm font-medium text-gray-700">E-mail</label>
-                            <input type="email" id="email" name="email" class="mt-1 block w-full p-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#79B858] transition-colors duration-300">
-                        </div>
-                        <div>
-                            <label for="mensagem" class="block text-sm font-medium text-gray-700">Mensagem</label>
-                            <textarea id="mensagem" name="mensagem" rows="4" class="mt-1 block w-full p-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#79B858] transition-colors duration-300"></textarea>
-                        </div>
-                        <button type="submit" class="w-full py-4 bg-[#23266D] text-white font-bold text-lg rounded-xl hover:bg-gray-800 active:scale-95 transition-all duration-100 shadow-lg">Enviar Mensagem</button>
-                    </form>
-                </div>
-            </section>
-        </main>
-
-        <!-- Rodapé da página com gradiente -->
-        <footer class="footer-gradient text-white py-8 text-center animated-section">
-            <p class="font-light tracking-wide">&copy; 2025 Victor Alves - Todos os direitos reservados</p>
-        </footer>
+          {isLoading && (
+            <div className="flex justify-center items-center h-48 text-indigo-400">
+              <div className="w-12 h-12 border-4 border-indigo-400 border-dotted rounded-full animate-spin"></div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
+  );
+};
 
-    <!-- Script JavaScript para as funcionalidades da API Gemini e animações de scroll -->
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // Animação de fade-in e slide-up ao rolar a página
-            const sections = document.querySelectorAll('.animated-section');
-            const appearOptions = {
-                threshold: 0.2 // A seção começa a animar quando 20% dela está visível
-            };
-            const appearOnScroll = new IntersectionObserver(function(entries, appearOnScroll) {
-                entries.forEach(entry => {
-                    if (!entry.isIntersecting) {
-                        return;
-                    } else {
-                        entry.target.classList.add('is-visible');
-                        appearOnScroll.unobserve(entry.target);
-                    }
-                });
-            }, appearOptions);
+// O código anterior estava tentando renderizar a aplicação antes de o elemento 'root' existir.
+// Movi a lógica de renderização para a função initApp, que é chamada apenas quando
+// a página está completamente carregada, garantindo que o elemento 'root' já está no DOM.
 
-            sections.forEach(section => {
-                appearOnScroll.observe(section);
-            });
-            
-            // Elementos para a Ferramenta de Geração de Ideias
-            const gerarBtn = document.getElementById('gerar-btn');
-            const temaInput = document.getElementById('tema-input');
-            const tipoConteudoSelect = document.getElementById('tipo-conteudo');
-            const resultadosDiv = document.getElementById('resultados-gemini');
-            const gerarBtnText = document.getElementById('gerar-btn-text');
-            const gerarBtnSpinner = document.getElementById('gerar-btn-spinner');
+// Esta função garante que o React é inicializado corretamente após a carga da página.
+function initApp() {
+    // Cria o elemento 'root' para o React, se ele ainda não existir.
+    let rootElement = document.getElementById('root');
+    if (!rootElement) {
+      rootElement = document.createElement('div');
+      rootElement.id = 'root';
+      document.body.appendChild(rootElement);
+    }
+    const root = createRoot(rootElement);
+    root.render(<App />);
+}
 
-            // Elementos para o Gerador de Rascunhos de Comunicação
-            const gerarRascunhoBtn = document.getElementById('gerar-rascunho-btn');
-            const temaRascunhoInput = document.getElementById('tema-rascunho-input');
-            const tipoRascunhoSelect = document.getElementById('tipo-rascunho-select');
-            const resultadosRascunhoDiv = document.getElementById('resultados-rascunho-gemini');
-            const gerarRascunhoBtnText = document.getElementById('gerar-rascunho-btn-text');
-            const gerarRascunhoBtnSpinner = document.getElementById('gerar-rascunho-btn-spinner');
+// Garante que a função de inicialização é chamada somente após a janela ser carregada.
+window.onload = initApp;
 
-            // Elementos para o Analisador de Slogans
-            const analisarSloganBtn = document.getElementById('analisar-slogan-btn');
-            const sloganInput = document.getElementById('slogan-input');
-            const resultadosSloganDiv = document.getElementById('resultados-slogan');
-            const analisarSloganBtnText = document.getElementById('analisar-slogan-btn-text');
-            const analisarSloganBtnSpinner = document.getElementById('analisar-slogan-btn-spinner');
-            
-            // Elementos para o Gerador de Biografias Políticas
-            const gerarBioBtn = document.getElementById('gerar-bio-btn');
-            const bioNomeInput = document.getElementById('bio-nome-input');
-            const bioPontosInput = document.getElementById('bio-pontos-input');
-            const resultadosBioDiv = document.getElementById('resultados-bio');
-            const gerarBioBtnText = document.getElementById('gerar-bio-btn-text');
-            const gerarBioBtnSpinner = document.getElementById('gerar-bio-btn-spinner');
-
-            // Função genérica para chamar a API Gemini com repetição exponencial
-            const callGeminiAPI = async (prompt, outputDiv, buttonTextElement, buttonSpinnerElement) => {
-                buttonTextElement.classList.add('hidden');
-                buttonSpinnerElement.classList.remove('hidden');
-                outputDiv.innerHTML = `<p class="text-gray-500 italic flex items-center"><div class="spinner border-gray-400 border-l-[#79B858] mr-2"></div> Gerando conteúdo, por favor aguarde...</p>`;
-                
-                // Botão para copiar o texto
-                const copyButton = document.createElement('button');
-                copyButton.className = 'absolute top-2 right-2 text-gray-500 hover:text-[#79B858] transition-colors duration-300 hidden';
-                copyButton.innerHTML = `<i class="fas fa-copy"></i>`;
-                copyButton.title = 'Copiar para a área de transferência';
-                outputDiv.appendChild(copyButton);
-
-                const chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
-                const payload = { contents: chatHistory };
-                const apiKey = AIzaSyAsMOSH-vld7O1NAYf-gPu2DEedFIJpgpg
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-
-                const maxRetries = 5;
-                let retryCount = 0;
-                let response;
-
-                while (retryCount < maxRetries) {
-                    try {
-                        response = await fetch(apiUrl, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(payload)
-                        });
-                        if (response.status !== 429) {
-                            break;
-                        }
-                        console.warn(`Taxa de limite excedida. Tentando novamente em ${Math.pow(2, retryCount)} segundos...`);
-                        await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
-                        retryCount++;
-                    } catch (e) {
-                        console.error("Erro ao fazer a chamada da API. Tentando novamente...", e);
-                        await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
-                        retryCount++;
-                    }
-                }
-
-                buttonTextElement.classList.remove('hidden');
-                buttonSpinnerElement.classList.add('hidden');
-
-                if (!response || !response.ok) {
-                    outputDiv.innerHTML = '<p class="text-red-500">Ocorreu um erro ao conectar com o serviço. Por favor, tente novamente.</p>';
-                    return;
-                }
-
-                const result = await response.json();
-                
-                // Extrai o texto da resposta da API de forma segura
-                const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-                if (text) {
-                    outputDiv.innerHTML = `<p>${text.replace(/\n/g, '<br>')}</p>`;
-                    copyButton.classList.remove('hidden');
-                    copyButton.onclick = () => {
-                        const tempTextarea = document.createElement('textarea');
-                        tempTextarea.value = text;
-                        document.body.appendChild(tempTextarea);
-                        tempTextarea.select();
-                        document.execCommand('copy');
-                        document.body.removeChild(tempTextarea);
-                        copyButton.innerHTML = `<i class="fas fa-check text-green-500"></i>`;
-                        setTimeout(() => {
-                            copyButton.innerHTML = `<i class="fas fa-copy"></i>`;
-                        }, 2000);
-                    };
-                    outputDiv.appendChild(copyButton);
-                } else {
-                    console.error("A resposta da API não continha o texto esperado.", result);
-                    outputDiv.innerHTML = '<p class="text-yellow-500">Não foi possível gerar conteúdo. A resposta da IA estava vazia. Por favor, tente novamente.</p>';
-                }
-            };
-
-            // Event listener para o Gerador de Ideias de Conteúdo
-            gerarBtn.addEventListener('click', async () => {
-                const tema = temaInput.value.trim();
-                const tipoConteudo = tipoConteudoSelect.value;
-
-                if (!tema) {
-                    resultadosDiv.innerHTML = '<p class="text-red-500">Por favor, insira um tema para gerar conteúdo.</p>';
-                    return;
-                }
-
-                let prompt;
-                switch (tipoConteudo) {
-                    case 'slogans':
-                        prompt = `Gere 3 slogans curtos e impactantes para uma campanha de comunicação política sobre o seguinte tema: "${tema}".`;
-                        break;
-                    case 'posts':
-                        prompt = `Gere 3 ideias de posts para redes sociais (com título e uma breve descrição) sobre o tema de comunicação política: "${tema}".`;
-                        break;
-                    case 'falas':
-                        prompt = `Gere 3 pontos de discussão ou falas curtas e persuasivas para um político usar em discursos ou entrevistas, sobre o tema: "${tema}".`;
-                        break;
-                }
-
-                try {
-                    await callGeminiAPI(prompt, resultadosDiv, gerarBtnText, gerarBtnSpinner);
-                } catch (error) {
-                    console.error('Erro na chamada da API:', error);
-                    resultadosDiv.innerHTML = '<p class="text-red-500">Ocorreu um erro ao conectar com o serviço. Verifique o console para mais detalhes.</p>';
-                }
-            });
-
-            // Event listener para o Gerador de Rascunhos de Comunicação
-            gerarRascunhoBtn.addEventListener('click', async () => {
-                const tema = temaRascunhoInput.value.trim();
-                const tipoRascunho = tipoRascunhoSelect.value;
-
-                if (!tema) {
-                    resultadosRascunhoDiv.innerHTML = '<p class="text-red-500">Por favor, insira um tema para gerar o rascunho.</p>';
-                    return;
-                }
-
-                let prompt;
-                switch (tipoRascunho) {
-                    case 'discurso':
-                        prompt = `Crie um rascunho de discurso político curto e inspirador sobre o tema e objetivo: "${tema}". O discurso deve ter uma introdução, três pontos principais e uma conclusão com um apelo à ação.`;
-                        break;
-                    case 'email':
-                        prompt = `Escreva um rascunho de e-mail para apoiadores de uma campanha política. O e-mail deve ser sobre o tema e objetivo: "${tema}". Ele deve ser motivacional e terminar com um pedido de engajamento.`;
-                        break;
-                    case 'blog':
-                        prompt = `Escreva um rascunho de um breve post de blog político sobre o tema e objetivo: "${tema}". O post deve ser objetivo e fácil de ler, com um título e um texto de até 200 palavras.`;
-                        break;
-                }
-
-                try {
-                    await callGeminiAPI(prompt, resultadosRascunhoDiv, gerarRascunhoBtnText, gerarRascunhoBtnSpinner);
-                } catch (error) {
-                    console.error('Erro na chamada da API:', error);
-                    resultadosRascunhoDiv.innerHTML = '<p class="text-red-500">Ocorreu um erro ao conectar com o serviço. Verifique o console para mais detalhes.</p>';
-                }
-            });
-
-            // Event listener para o Analisador de Slogans
-            analisarSloganBtn.addEventListener('click', async () => {
-                const slogan = sloganInput.value.trim();
-
-                if (!slogan) {
-                    resultadosSloganDiv.innerHTML = '<p class="text-red-500">Por favor, insira um slogan para análise.</p>';
-                    return;
-                }
-
-                const prompt = `Analise o seguinte slogan político. Avalie seus pontos fortes, pontos fracos, o impacto potencial no público e sugira uma melhoria para torná-lo mais eficaz. O slogan é: "${slogan}"`;
-                try {
-                    await callGeminiAPI(prompt, resultadosSloganDiv, analisarSloganBtnText, analisarSloganBtnSpinner);
-                } catch (error) {
-                    console.error('Erro na chamada da API:', error);
-                    resultadosSloganDiv.innerHTML = '<p class="text-red-500">Ocorreu um erro ao conectar com o serviço. Verifique o console para mais detalhes.</p>';
-                }
-            });
-
-            // Event listener para o Gerador de Biografias Políticas
-            gerarBioBtn.addEventListener('click', async () => {
-                const nome = bioNomeInput.value.trim();
-                const pontos = bioPontosInput.value.trim();
-
-                if (!nome || !pontos) {
-                    resultadosBioDiv.innerHTML = '<p class="text-red-500">Por favor, preencha o nome e os pontos principais para gerar a biografia.</p>';
-                    return;
-                }
-
-                const prompt = `Escreva uma breve biografia política persuasiva e profissional sobre a pessoa chamada "${nome}". A biografia deve incluir os seguintes pontos: "${pontos}". O texto deve ser inspirador e focar nas qualidades de liderança e realização.`;
-                try {
-                    await callGeminiAPI(prompt, resultadosBioDiv, gerarBioBtnText, gerarBioBtnSpinner);
-                } catch (error) {
-                    console.error('Erro na chamada da API:', error);
-                    resultadosBioDiv.innerHTML = '<p class="text-red-500">Ocorreu um erro ao conectar com o serviço. Verifique o console para mais detalhes.</p>';
-                }
-            });
-        });
-    </script>
-</body>
-</html>
+// Para garantir que o estilo Tailwind CSS seja carregado.
+const tailwindScript = document.createElement('script');
+tailwindScript.src = 'https://cdn.tailwindcss.com';
+document.head.appendChild(tailwindScript);
