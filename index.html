@@ -2,40 +2,40 @@ import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
 const App = () => {
-  // Estado para armazenar o prompt do usuário
   const [prompt, setPrompt] = useState('');
-  // Estado para armazenar o texto gerado pela IA
   const [generatedText, setGeneratedText] = useState('');
-  // Estado para controlar o estado de carregamento durante a chamada da API
   const [isLoading, setIsLoading] = useState(false);
-  // Estado para armazenar mensagens de erro
   const [error, setError] = useState(null);
 
-  // Função assíncrona para chamar a API de geração de texto
   const generateText = async () => {
-    // Limpa os estados de texto gerado e erro antes de uma nova chamada
     setGeneratedText('');
     setError(null);
     setIsLoading(true);
 
     try {
-      // Prepara o histórico da conversa com o prompt do usuário
-      let chatHistory = [];
-      chatHistory.push({ role: "user", parts: [{ text: prompt }] });
-      const payload = { contents: chatHistory };
+      const payload = {
+        prompt: {
+          messages: [
+            {
+              role: "user",
+              content: {
+                text: prompt
+              }
+            }
+          ]
+        }
+      };
 
-      // O API key é gerenciado automaticamente pelo ambiente, então a string pode ser vazia
-      const apiKey = "";
-      // URL da API para o modelo Gemini 2.5 Flash
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+      // Se seu ambiente já gerencia a API key, deixe a chave vazia ou remova da URL
+      const apiKey = ""; 
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent${apiKey ? `?key=${apiKey}` : ''}`;
 
       let response;
       let result;
       let retries = 0;
       const maxRetries = 5;
-      const initialDelay = 1000; // 1 segundo
+      const initialDelay = 1000;
 
-      // Implementa o backoff exponencial para lidar com limites de taxa
       while (retries < maxRetries) {
         try {
           response = await fetch(apiUrl, {
@@ -44,48 +44,43 @@ const App = () => {
             body: JSON.stringify(payload)
           });
 
-          // Se a resposta for bem-sucedida, saia do loop
           if (response.ok) {
             result = await response.json();
             break;
           } else if (response.status === 429) {
-            // Se for um erro de limite de taxa (429), tente novamente
             retries++;
             const delay = initialDelay * Math.pow(2, retries - 1);
-            await new Promise(resolve => setTimeout(resolve, delay));
-            console.log(`Tentativa ${retries} de ${maxRetries}: Limite de taxa atingido. Tentando novamente em ${delay}ms.`);
+            await new Promise(r => setTimeout(r, delay));
+            console.log(`Tentativa ${retries} de ${maxRetries}: Limite de taxa. Tentando em ${delay}ms.`);
           } else {
-            // Outros erros
             const errorText = await response.text();
-            throw new Error(`Erro na API: ${response.status} - ${errorText}`);
+            throw new Error(`Erro API: ${response.status} - ${errorText}`);
           }
-        } catch (fetchError) {
-          if (retries === maxRetries - 1) {
-            throw fetchError;
-          }
+        } catch (err) {
+          if (retries === maxRetries - 1) throw err;
           retries++;
           const delay = initialDelay * Math.pow(2, retries - 1);
-          await new Promise(resolve => setTimeout(resolve, delay));
-          console.log(`Tentativa ${retries} de ${maxRetries}: Erro de rede. Tentando novamente em ${delay}ms.`);
+          await new Promise(r => setTimeout(r, delay));
+          console.log(`Tentativa ${retries} de ${maxRetries}: Erro de rede. Tentando em ${delay}ms.`);
         }
       }
 
-      if (result && result.candidates && result.candidates.length > 0 &&
-          result.candidates[0].content && result.candidates[0].content.parts &&
-          result.candidates[0].content.parts.length > 0) {
-        // Extrai o texto da resposta e atualiza o estado
-        const text = result.candidates[0].content.parts[0].text;
-        setGeneratedText(text);
+      if (
+        result && 
+        result.candidates && 
+        result.candidates.length > 0 && 
+        result.candidates[0].content && 
+        result.candidates[0].content.text
+      ) {
+        setGeneratedText(result.candidates[0].content.text);
       } else {
-        // Lida com casos em que a estrutura da resposta é inesperada
-        setError('A resposta da API está vazia ou com formato incorreto.');
+        setError('Resposta da API vazia ou em formato inesperado.');
       }
+
     } catch (err) {
-      // Captura e exibe qualquer erro que ocorra
-      setError(`Ocorreu um erro: ${err.message}`);
+      setError(`Erro: ${err.message}`);
       console.error(err);
     } finally {
-      // Sempre define o estado de carregamento como falso no final
       setIsLoading(false);
     }
   };
@@ -98,18 +93,16 @@ const App = () => {
           Digite um prompt e veja a IA gerar uma resposta.
         </p>
 
-        {/* Área de entrada do prompt */}
         <textarea
           className="w-full h-32 p-4 mb-4 text-gray-200 bg-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-300 placeholder-gray-400 resize-none"
           placeholder="Exemplo: Escreva um poema sobre o mar e o pôr do sol..."
           value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
+          onChange={e => setPrompt(e.target.value)}
         ></textarea>
 
-        {/* Botão para gerar o texto */}
         <button
           onClick={generateText}
-          disabled={isLoading || !prompt}
+          disabled={isLoading || !prompt.trim()}
           className={`w-full py-3 px-6 rounded-xl font-semibold text-lg transition-all duration-300
             ${isLoading
               ? 'bg-indigo-700 cursor-not-allowed'
@@ -120,7 +113,6 @@ const App = () => {
           {isLoading ? 'Gerando...' : 'Gerar'}
         </button>
 
-        {/* Área de exibição do resultado */}
         <div className="mt-8">
           {error && (
             <div className="bg-red-900 text-red-300 p-4 rounded-xl border border-red-700">
@@ -132,8 +124,8 @@ const App = () => {
           {!isLoading && !error && generatedText && (
             <div className="bg-gray-700 p-6 rounded-2xl border border-gray-600 shadow-inner">
               <h3 className="text-xl font-bold mb-4 text-indigo-300">Resposta da IA:</h3>
-              <div className="prose prose-invert max-w-none text-gray-300">
-                <p>{generatedText}</p>
+              <div className="prose prose-invert max-w-none text-gray-300 whitespace-pre-wrap">
+                {generatedText}
               </div>
             </div>
           )}
@@ -149,27 +141,15 @@ const App = () => {
   );
 };
 
-// O código anterior estava tentando renderizar a aplicação antes de o elemento 'root' existir.
-// Movi a lógica de renderização para a função initApp, que é chamada apenas quando
-// a página está completamente carregada, garantindo que o elemento 'root' já está no DOM.
-
-// Esta função garante que o React é inicializado corretamente após a carga da página.
 function initApp() {
-    // Cria o elemento 'root' para o React, se ele ainda não existir.
-    let rootElement = document.getElementById('root');
-    if (!rootElement) {
-      rootElement = document.createElement('div');
-      rootElement.id = 'root';
-      document.body.appendChild(rootElement);
-    }
-    const root = createRoot(rootElement);
-    root.render(<App />);
+  let rootElement = document.getElementById('root');
+  if (!rootElement) {
+    rootElement = document.createElement('div');
+    rootElement.id = 'root';
+    document.body.appendChild(rootElement);
+  }
+  const root = createRoot(rootElement);
+  root.render(<App />);
 }
 
-// Garante que a função de inicialização é chamada somente após a janela ser carregada.
 window.onload = initApp;
-
-// Para garantir que o estilo Tailwind CSS seja carregado.
-const tailwindScript = document.createElement('script');
-tailwindScript.src = 'https://cdn.tailwindcss.com';
-document.head.appendChild(tailwindScript);
