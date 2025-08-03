@@ -671,7 +671,8 @@
 
                 const chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
                 const payload = { contents: chatHistory };
-                const apiKey = "AIzaSyBaO46RhKz4euLFwY3th6nAmnp7kfNK6Ac";
+                // A chave da API agora será injetada automaticamente.
+                const apiKey = "";
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
 
                 const maxRetries = 5;
@@ -701,35 +702,53 @@
                 buttonTextElement.classList.remove('hidden');
                 buttonSpinnerElement.classList.add('hidden');
 
-                if (!response || !response.ok) {
-                    outputDiv.innerHTML = '<p class="text-red-500">Ocorreu um erro ao conectar com o serviço. Por favor, tente novamente.</p>';
+                if (!response) {
+                    outputDiv.innerHTML = '<p class="text-red-500">Ocorreu um erro ao conectar com o serviço. Verifique o console para mais detalhes.</p>';
                     return;
                 }
 
-                const result = await response.json();
-                
-                // Extrai o texto da resposta da API de forma segura
-                const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (!response.ok) {
+                    try {
+                        const errorData = await response.json();
+                        const errorMessage = errorData.error?.message || `Erro de rede: ${response.status} ${response.statusText}`;
+                        outputDiv.innerHTML = `<p class="text-red-500">Erro na API: ${errorMessage}</p>`;
+                        console.error('Detalhes do erro da API:', errorData);
+                    } catch (e) {
+                        outputDiv.innerHTML = `<p class="text-red-500">Ocorreu um erro desconhecido: ${response.status} ${response.statusText}</p>`;
+                        console.error('Erro ao processar a resposta de erro:', e);
+                    }
+                    return;
+                }
 
-                if (text) {
-                    outputDiv.innerHTML = `<p>${text.replace(/\n/g, '<br>')}</p>`;
-                    copyButton.classList.remove('hidden');
-                    copyButton.onclick = () => {
-                        const tempTextarea = document.createElement('textarea');
-                        tempTextarea.value = text;
-                        document.body.appendChild(tempTextarea);
-                        tempTextarea.select();
-                        document.execCommand('copy');
-                        document.body.removeChild(tempTextarea);
-                        copyButton.innerHTML = `<i class="fas fa-check text-green-500"></i>`;
-                        setTimeout(() => {
-                            copyButton.innerHTML = `<i class="fas fa-copy"></i>`;
-                        }, 2000);
-                    };
-                    outputDiv.appendChild(copyButton);
-                } else {
-                    console.error("A resposta da API não continha o texto esperado.", result);
-                    outputDiv.innerHTML = '<p class="text-yellow-500">Não foi possível gerar conteúdo. A resposta da IA estava vazia. Por favor, tente novamente.</p>';
+                try {
+                    const result = await response.json();
+                    
+                    // Extrai o texto da resposta da API de forma segura
+                    const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                    if (text) {
+                        outputDiv.innerHTML = `<p>${text.replace(/\n/g, '<br>')}</p>`;
+                        copyButton.classList.remove('hidden');
+                        copyButton.onclick = () => {
+                            const tempTextarea = document.createElement('textarea');
+                            tempTextarea.value = text;
+                            document.body.appendChild(tempTextarea);
+                            tempTextarea.select();
+                            document.execCommand('copy');
+                            document.body.removeChild(tempTextarea);
+                            copyButton.innerHTML = `<i class="fas fa-check text-green-500"></i>`;
+                            setTimeout(() => {
+                                copyButton.innerHTML = `<i class="fas fa-copy"></i>`;
+                            }, 2000);
+                        };
+                        outputDiv.appendChild(copyButton);
+                    } else {
+                        console.error("A resposta da API não continha o texto esperado.", result);
+                        outputDiv.innerHTML = '<p class="text-yellow-500">Não foi possível gerar conteúdo. A resposta da IA estava vazia. Por favor, tente novamente.</p>';
+                    }
+                } catch (e) {
+                    outputDiv.innerHTML = '<p class="text-red-500">Erro ao processar a resposta do servidor. A resposta não está no formato esperado.</p>';
+                    console.error('Erro ao processar JSON:', e);
                 }
             };
 
