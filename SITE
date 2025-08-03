@@ -92,7 +92,8 @@
         <section id="instagram" class="mb-10 animate-fade-up">
             <h2 class="text-3xl font-bold text-[#23266D] mb-6">Feed do Instagram</h2>
             <div class="flex justify-center mt-4">
-                <iframe src="https://snapwidget.com/embed/1033515" class="w-full max-w-xl h-[500px] border-none rounded-xl shadow-md" allowtransparency="true"></iframe>
+                <iframe src=<!-- SnapWidget -->
+<iframe src="https://snapwidget.com/embed/1104442" class="snapwidget-widget" allowtransparency="true" frameborder="0" scrolling="no" style="border:none; overflow:hidden;  width:765px; height:689.9966666666667px" title="Posts from Instagram"></iframe>
             </div>
             <p class="mt-4 text-center text-gray-600">Siga <a href="https://www.instagram.com/ovictormarketing" target="_blank" class="text-[#23266D] hover:underline">@ovictormarketing</a> para mais conteúdos.</p>
         </section>
