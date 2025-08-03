@@ -13,22 +13,20 @@ const App = () => {
     setIsLoading(true);
 
     try {
+      // Payload no formato correto esperado pela API Gemini
       const payload = {
         prompt: {
           messages: [
             {
               role: "user",
-              content: {
-                text: prompt
-              }
+              content: { text: prompt }
             }
           ]
         }
       };
 
-      // Se seu ambiente já gerencia a API key, deixe a chave vazia ou remova da URL
-      const apiKey = ""; 
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent${apiKey ? `?key=${apiKey}` : ''}`;
+      const apiKey = "AIzaSyBaO46RhKz4euLFwY3th6nAmnp7kfNK6Ac";
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
 
       let response;
       let result;
@@ -50,35 +48,37 @@ const App = () => {
           } else if (response.status === 429) {
             retries++;
             const delay = initialDelay * Math.pow(2, retries - 1);
-            await new Promise(r => setTimeout(r, delay));
-            console.log(`Tentativa ${retries} de ${maxRetries}: Limite de taxa. Tentando em ${delay}ms.`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            console.log(`Tentativa ${retries} de ${maxRetries}: Limite de taxa. Tentando novamente em ${delay}ms.`);
           } else {
             const errorText = await response.text();
-            throw new Error(`Erro API: ${response.status} - ${errorText}`);
+            throw new Error(`Erro na API: ${response.status} - ${errorText}`);
           }
-        } catch (err) {
-          if (retries === maxRetries - 1) throw err;
+        } catch (fetchError) {
+          if (retries === maxRetries - 1) {
+            throw fetchError;
+          }
           retries++;
           const delay = initialDelay * Math.pow(2, retries - 1);
-          await new Promise(r => setTimeout(r, delay));
-          console.log(`Tentativa ${retries} de ${maxRetries}: Erro de rede. Tentando em ${delay}ms.`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          console.log(`Tentativa ${retries} de ${maxRetries}: Erro de rede. Tentando novamente em ${delay}ms.`);
         }
       }
 
       if (
-        result && 
-        result.candidates && 
-        result.candidates.length > 0 && 
-        result.candidates[0].content && 
-        result.candidates[0].content.text
+        result &&
+        result.candidates &&
+        result.candidates.length > 0 &&
+        result.candidates[0].content &&
+        typeof result.candidates[0].content.text === 'string'
       ) {
         setGeneratedText(result.candidates[0].content.text);
       } else {
-        setError('Resposta da API vazia ou em formato inesperado.');
+        setError('Resposta da API está vazia ou em formato incorreto.');
       }
 
     } catch (err) {
-      setError(`Erro: ${err.message}`);
+      setError(`Ocorreu um erro: ${err.message}`);
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -98,7 +98,7 @@ const App = () => {
           placeholder="Exemplo: Escreva um poema sobre o mar e o pôr do sol..."
           value={prompt}
           onChange={e => setPrompt(e.target.value)}
-        ></textarea>
+        />
 
         <button
           onClick={generateText}
@@ -122,9 +122,9 @@ const App = () => {
           )}
 
           {!isLoading && !error && generatedText && (
-            <div className="bg-gray-700 p-6 rounded-2xl border border-gray-600 shadow-inner">
+            <div className="bg-gray-700 p-6 rounded-2xl border border-gray-600 shadow-inner whitespace-pre-wrap">
               <h3 className="text-xl font-bold mb-4 text-indigo-300">Resposta da IA:</h3>
-              <div className="prose prose-invert max-w-none text-gray-300 whitespace-pre-wrap">
+              <div className="prose prose-invert max-w-none text-gray-300">
                 {generatedText}
               </div>
             </div>
@@ -153,3 +153,8 @@ function initApp() {
 }
 
 window.onload = initApp;
+
+// Para garantir que o estilo Tailwind CSS seja carregado.
+const tailwindScript = document.createElement('script');
+tailwindScript.src = 'https://cdn.tailwindcss.com';
+document.head.appendChild(tailwindScript);
