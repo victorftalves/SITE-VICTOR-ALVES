@@ -12,13 +12,39 @@
         /* Define a fonte padrão para o corpo da página */
         body { font-family: 'Inter', sans-serif; }
         
-        /* Adiciona a animação de fade-in para as seções */
-        .fade-in {
-            opacity: 0;
-            transform: translateY(20px);
-            transition: opacity 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        /* Animação para a entrada das seções, combinando fade e slide up */
+        @keyframes fadeInSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
-        .fade-in.is-visible {
+        
+        /* Efeito de pulso para os botões */
+        @keyframes pulseShadow {
+            0% { box-shadow: 0 0 0 0 rgba(121, 184, 88, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(121, 184, 88, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(121, 184, 88, 0); }
+        }
+
+        /* Animação para o "desenho" da linha do tempo */
+        @keyframes drawLine {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+
+        /* Classe que aplica a animação de fade in e slide up para as seções */
+        .animated-section {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+
+        .animated-section.is-visible {
             opacity: 1;
             transform: translateY(0);
         }
@@ -36,12 +62,13 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Gradiente para o cabeçalho e rodapé */
-        .header-gradient {
-            background-image: linear-gradient(to right, #23266D, #3F51B5);
-        }
-        .footer-gradient {
-            background-image: linear-gradient(to right, #3F51B5, #23266D);
+        /* Gradiente para o cabeçalho e rodapé com textura moderna */
+        .header-gradient, .footer-gradient {
+            /* Adiciona um padrão de pontos brancos com opacidade baixa sobre o gradiente principal */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 4' width='4' height='4'%3E%3Cpath fill='%23ffffff' fill-opacity='0.1' d='M1 3h1v1H1V3zm2-2h1v1H3V1z'%3E%3C/path%3E%3C/svg%3E"),
+                            linear-gradient(to right, #23266D, #3F51B5);
+            background-size: 4px 4px, 100% 100%; /* Ajusta o tamanho da textura e do gradiente */
+            background-blend-mode: overlay; /* Mistura os dois backgrounds para um efeito sutil */
         }
 
         /* Efeito de sombra para as seções */
@@ -60,6 +87,17 @@
             flex-shrink: 0;
         }
 
+        /* Estilos para a linha do tempo que será animada */
+        .timeline-line {
+            height: 4px;
+            background-color: #3F51B5;
+            position: absolute;
+            top: 50%;
+            left: 0;
+            transform: translateY(-50%);
+            animation: drawLine 1s ease-out forwards;
+        }
+        
         /* Estilos para o ponto na linha do tempo */
         .timeline-dot {
             width: 1rem;
@@ -69,9 +107,17 @@
             border-radius: 50%;
             position: absolute;
             top: -0.5rem;
-            left: calc(50% - 0.5rem);
+            left: 50%;
             transform: translateX(-50%);
+            transition: all 0.3s ease-in-out;
         }
+
+        /* Hover nos cards da timeline para destacar o ponto */
+        .timeline-card:hover .timeline-dot {
+            transform: scale(1.5) translateX(-33%);
+            background-color: #79B858;
+        }
+
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
@@ -102,13 +148,13 @@
         <!-- Conteúdo principal -->
         <main class="container mx-auto px-4 py-12">
             <!-- Seção "Quem Sou Eu" -->
-            <section id="quem" class="mb-12 bg-white p-8 rounded-2xl card-shadow fade-in">
+            <section id="quem" class="mb-12 bg-white p-8 rounded-2xl card-shadow animated-section">
                 <h2 class="text-3xl font-extrabold text-[#23266D] mb-4 border-b-2 border-gray-200 pb-2">Quem Sou Eu</h2>
                 <p class="text-lg leading-relaxed">Sou Victor Alves, especialista em comunicação política, designer gráfico e estrategista de campanhas eleitorais vencedoras. Atuo transformando imagem e posicionamento em votos, com presença marcante em câmaras municipais e prefeituras do Pará.</p>
             </section>
 
             <!-- Seção "Postagens Recentes" -->
-            <section id="postagens" class="mb-12 fade-in">
+            <section id="postagens" class="mb-12 animated-section">
                 <h2 class="text-3xl font-extrabold text-[#23266D] mb-6">Postagens Recentes</h2>
                 <div class="grid md:grid-cols-2 gap-8">
                     <div class="bg-white p-6 rounded-2xl card-shadow transition-all duration-300 hover:scale-105 hover:shadow-2xl">
@@ -123,7 +169,7 @@
             </section>
 
             <!-- Seção "Campanhas Vencidas" -->
-            <section id="campanhas" class="mb-12 fade-in">
+            <section id="campanhas" class="mb-12 animated-section">
                 <h2 class="text-3xl font-extrabold text-[#23266D] mb-6">Campanhas Vencidas</h2>
                 <div class="grid gap-4">
                     <div class="bg-white p-5 rounded-2xl card-shadow border-l-4 border-[#79B858] transition-all duration-300 hover:bg-gray-100 hover:scale-[1.02] hover:shadow-lg">
@@ -142,11 +188,11 @@
             </section>
 
             <!-- Seção Linha do Tempo dos Presidentes do Brasil -->
-            <section id="linha-do-tempo" class="mb-12 fade-in">
+            <section id="linha-do-tempo" class="mb-12 animated-section">
                 <h2 class="text-3xl font-extrabold text-[#23266D] mb-6">Presidentes da República do Brasil (1889–presente) 🇧🇷</h2>
                 <div class="relative bg-white p-8 rounded-2xl card-shadow overflow-x-auto timeline-scroll-container">
-                    <!-- Linha principal da linha do tempo -->
-                    <div class="absolute top-1/2 left-0 h-1 bg-[#3F51B5] w-full"></div>
+                    <!-- Linha principal da linha do tempo com animação de desenho -->
+                    <div id="timeline-line" class="absolute top-1/2 left-0 h-1 bg-[#3F51B5] w-full origin-left transform scale-x-0"></div>
                     <div class="flex space-x-8 pb-4">
                         <!-- Cards de cada presidente, com informações e imagem placeholders -->
                         <div class="timeline-card w-64 bg-gray-50 p-4 rounded-xl border-t-4 border-[#79B858] transition-all duration-300 hover:scale-105 hover:shadow-lg relative">
@@ -434,7 +480,7 @@
             </section>
 
             <!-- Seção de Depoimentos -->
-            <section id="depoimentos" class="mb-12 fade-in">
+            <section id="depoimentos" class="mb-12 animated-section">
                 <h2 class="text-3xl font-extrabold text-[#23266D] mb-6 text-center">O que meus clientes dizem</h2>
                 <div class="grid md:grid-cols-2 gap-8">
                     <div class="bg-white p-8 rounded-2xl card-shadow border-t-4 border-[#79B858] transition-all duration-300 hover:scale-105 hover:shadow-2xl">
@@ -451,7 +497,7 @@
             </section>
             
             <!-- Seção para a ferramenta Gemini de Analisador de Slogans -->
-            <section id="slogan-analyzer" class="mb-12 fade-in">
+            <section id="slogan-analyzer" class="mb-12 animated-section">
                 <div class="bg-white p-8 rounded-2xl card-shadow border-l-4 border-[#FFC107]">
                     <h2 class="text-3xl font-extrabold text-[#23266D] mb-4">Analisador de Slogans ✨</h2>
                     <p class="text-gray-700 mb-6">Insira um slogan de campanha e receba uma análise completa de sua força e impacto.</p>
@@ -465,7 +511,7 @@
             </section>
             
             <!-- Seção para a ferramenta Gemini de Gerador de Biografias Políticas -->
-            <section id="bio-generator" class="mb-12 fade-in">
+            <section id="bio-generator" class="mb-12 animated-section">
                 <div class="bg-white p-8 rounded-2xl card-shadow border-l-4 border-[#1976D2]">
                     <h2 class="text-3xl font-extrabold text-[#23266D] mb-4">Gerador de Biografias Políticas ✨</h2>
                     <p class="text-gray-700 mb-6">Crie uma biografia profissional e impactante. Forneça o nome e os principais pontos da carreira do político.</p>
@@ -480,7 +526,7 @@
             </section>
 
             <!-- Seção "Feed do Instagram" -->
-            <section id="instagram" class="mb-12 fade-in">
+            <section id="instagram" class="mb-12 animated-section">
                 <h2 class="text-3xl font-extrabold text-[#23266D] mb-6">Feed do Instagram</h2>
                 <div class="flex justify-center mt-4 bg-white p-6 rounded-2xl card-shadow">
                     <!-- SnapWidget -->
@@ -490,7 +536,7 @@
             </section>
             
             <!-- Seção para a ferramenta Gemini de Geração de Conteúdo -->
-            <section id="ferramenta-gemini" class="mb-12 fade-in">
+            <section id="ferramenta-gemini" class="mb-12 animated-section">
                 <div class="bg-white p-8 rounded-2xl card-shadow border-l-4 border-[#79B858]">
                     <h2 class="text-3xl font-extrabold text-[#23266D] mb-4">Gerador de Ideias de Conteúdo ✨</h2>
                     <p class="text-gray-700 mb-6">Use o poder da IA para gerar ideias para sua campanha. Descreva um tema ou objetivo político e receba sugestões instantâneas.</p>
@@ -509,7 +555,7 @@
             </section>
 
             <!-- Nova seção para o Gerador de Rascunhos de Comunicação -->
-            <section id="rascunhos-gemini" class="mb-12 fade-in">
+            <section id="rascunhos-gemini" class="mb-12 animated-section">
                 <div class="bg-white p-8 rounded-2xl card-shadow border-l-4 border-[#23266D]">
                     <h2 class="text-3xl font-extrabold text-[#23266D] mb-4">Gerador de Rascunhos de Comunicação ✨</h2>
                     <p class="text-gray-700 mb-6">Crie rascunhos completos para discursos, e-mails ou posts de blog. Descreva o tema e a IA fará o trabalho de redação.</p>
@@ -528,7 +574,7 @@
             </section>
 
             <!-- Seção de Contato com formulário -->
-            <section id="contato" class="mb-12 fade-in">
+            <section id="contato" class="mb-12 animated-section">
                 <h2 class="text-3xl font-extrabold text-[#23266D] mb-6">Contato</h2>
                 <div class="bg-white p-8 rounded-2xl card-shadow">
                     <form class="space-y-6">
@@ -551,18 +597,18 @@
         </main>
 
         <!-- Rodapé da página com gradiente -->
-        <footer class="footer-gradient text-white py-8 text-center fade-in">
+        <footer class="footer-gradient text-white py-8 text-center animated-section">
             <p class="font-light tracking-wide">&copy; 2025 Victor Alves - Todos os direitos reservados</p>
         </footer>
     </div>
 
-    <!-- Script JavaScript para as funcionalidades da API Gemini -->
+    <!-- Script JavaScript para as funcionalidades da API Gemini e animações de scroll -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Animação de fade-in ao rolar a página
-            const faders = document.querySelectorAll('.fade-in');
+            // Animação de fade-in e slide-up ao rolar a página
+            const sections = document.querySelectorAll('.animated-section');
             const appearOptions = {
-                threshold: 0.1
+                threshold: 0.2 // A seção começa a animar quando 20% dela está visível
             };
             const appearOnScroll = new IntersectionObserver(function(entries, appearOnScroll) {
                 entries.forEach(entry => {
@@ -575,10 +621,10 @@
                 });
             }, appearOptions);
 
-            faders.forEach(fader => {
-                appearOnScroll.observe(fader);
+            sections.forEach(section => {
+                appearOnScroll.observe(section);
             });
-
+            
             // Elementos para a Ferramenta de Geração de Ideias
             const gerarBtn = document.getElementById('gerar-btn');
             const temaInput = document.getElementById('tema-input');
@@ -661,7 +707,9 @@
                 }
 
                 const result = await response.json();
-                const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                
+                // Extrai o texto da resposta da API de forma segura
+                const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
 
                 if (text) {
                     outputDiv.innerHTML = `<p>${text.replace(/\n/g, '<br>')}</p>`;
@@ -680,7 +728,8 @@
                     };
                     outputDiv.appendChild(copyButton);
                 } else {
-                    outputDiv.innerHTML = '<p class="text-yellow-500">Não foi possível gerar conteúdo. Por favor, tente novamente com um tema diferente.</p>';
+                    console.error("A resposta da API não continha o texto esperado.", result);
+                    outputDiv.innerHTML = '<p class="text-yellow-500">Não foi possível gerar conteúdo. A resposta da IA estava vazia. Por favor, tente novamente.</p>';
                 }
             };
 
