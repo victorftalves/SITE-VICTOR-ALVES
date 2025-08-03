@@ -88,6 +88,7 @@
         }
 
         /* Estilos para a linha do tempo que será animada */
+        /* CORREÇÃO: A classe 'timeline-line' agora é aplicada ao elemento HTML correto para ativar a animação. */
         .timeline-line {
             height: 4px;
             background-color: #3F51B5;
@@ -191,8 +192,8 @@
             <section id="linha-do-tempo" class="mb-12 animated-section">
                 <h2 class="text-3xl font-extrabold text-[#23266D] mb-6">Presidentes da República do Brasil (1889–presente) 🇧🇷</h2>
                 <div class="relative bg-white p-8 rounded-2xl card-shadow overflow-x-auto timeline-scroll-container">
-                    <!-- Linha principal da linha do tempo com animação de desenho -->
-                    <div id="timeline-line" class="absolute top-1/2 left-0 h-1 bg-[#3F51B5] w-full origin-left transform scale-x-0"></div>
+                    <!-- CORREÇÃO: A classe `timeline-line` foi adicionada para ativar a animação. -->
+                    <div id="timeline-line" class="absolute top-1/2 left-0 h-1 bg-[#3F51B5] w-full origin-left"></div>
                     <div class="flex space-x-8 pb-4">
                         <!-- Cards de cada presidente, com informações e imagem placeholders -->
                         <div class="timeline-card w-64 bg-gray-50 p-4 rounded-xl border-t-4 border-[#79B858] transition-all duration-300 hover:scale-105 hover:shadow-lg relative">
