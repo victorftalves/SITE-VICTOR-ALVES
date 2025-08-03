@@ -26,6 +26,7 @@
                 <a href="#instagram" class="text-white hover:text-[#79B858] font-semibold transition-colors duration-300">Instagram</a>
                 <a href="#ferramenta-gemini" class="text-white hover:text-[#79B858] font-semibold transition-colors duration-300">Ideias de Conteúdo</a>
                 <a href="#rascunhos-gemini" class="text-white hover:text-[#79B858] font-semibold transition-colors duration-300">Gerar Rascunhos</a>
+                <a href="#analise-sentimento-gemini" class="text-white hover:text-[#79B858] font-semibold transition-colors duration-300">Análise de Sentimento</a>
                 <a href="#contato" class="text-white hover:text-[#79B858] font-semibold transition-colors duration-300">Contato</a>
             </nav>
         </div>
@@ -92,8 +93,7 @@
         <section id="instagram" class="mb-10 animate-fade-up">
             <h2 class="text-3xl font-bold text-[#23266D] mb-6">Feed do Instagram</h2>
             <div class="flex justify-center mt-4">
-                <iframe src=<!-- SnapWidget -->
-<iframe src="https://snapwidget.com/embed/1104442" class="snapwidget-widget" allowtransparency="true" frameborder="0" scrolling="no" style="border:none; overflow:hidden;  width:765px; height:689.9966666666667px" title="Posts from Instagram"></iframe>
+                <iframe src="https://snapwidget.com/embed/1033515" class="w-full max-w-xl h-[500px] border-none rounded-xl shadow-md" allowtransparency="true"></iframe>
             </div>
             <p class="mt-4 text-center text-gray-600">Siga <a href="https://www.instagram.com/ovictormarketing" target="_blank" class="text-[#23266D] hover:underline">@ovictormarketing</a> para mais conteúdos.</p>
         </section>
@@ -114,7 +114,7 @@
             </div>
         </section>
 
-        <!-- Nova seção para o Gerador de Rascunhos de Comunicação -->
+        <!-- Seção para o Gerador de Rascunhos de Comunicação -->
         <section id="rascunhos-gemini" class="mb-10 animate-fade-up">
             <div class="bg-white p-6 rounded-xl shadow-md">
                 <h2 class="text-3xl font-bold text-[#23266D] mb-4">Gerador de Rascunhos de Comunicação ✨</h2>
@@ -127,6 +127,22 @@
                 </select>
                 <button id="gerar-rascunho-btn" class="w-full mt-4 py-3 bg-[#23266D] text-white font-bold rounded-lg hover:bg-gray-800 transition-colors duration-300">Gerar Rascunho ✨</button>
                 <div id="resultados-rascunho-gemini" class="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg whitespace-pre-wrap"></div>
+            </div>
+        </section>
+
+        <!-- Nova seção para o Analisador de Sentimento de Texto -->
+        <section id="analise-sentimento-gemini" class="mb-10 animate-fade-up">
+            <div class="bg-white p-6 rounded-xl shadow-md">
+                <h2 class="text-3xl font-bold text-[#23266D] mb-4">Analisador de Sentimento de Texto 🤔</h2>
+                <p class="text-gray-700 mb-4">Cole um texto para que a IA analise o sentimento (positivo, negativo ou neutro) e sua justificativa. Ideal para monitorar o feedback público.</p>
+                <textarea id="texto-analise-input" class="w-full h-32 p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#79B858]" placeholder="Cole o texto aqui para análise..."></textarea>
+                <select id="idioma-analise-select" class="w-full mt-4 p-3 rounded-lg border border-gray-300 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#79B858]">
+                    <option value="portugues">Analisar em Português</option>
+                    <option value="espanhol">Analisar em Espanhol</option>
+                    <option value="ingles">Analisar em Inglês</option>
+                </select>
+                <button id="analisar-btn" class="w-full mt-4 py-3 bg-[#23266D] text-white font-bold rounded-lg hover:bg-gray-800 transition-colors duration-300">Analisar Sentimento 🤔</button>
+                <div id="resultados-analise-gemini" class="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg whitespace-pre-wrap"></div>
             </div>
         </section>
 
@@ -172,6 +188,12 @@
             const temaRascunhoInput = document.getElementById('tema-rascunho-input');
             const tipoRascunhoSelect = document.getElementById('tipo-rascunho-select');
             const resultadosRascunhoDiv = document.getElementById('resultados-rascunho-gemini');
+
+            // Elementos para o Analisador de Sentimento de Texto
+            const analisarBtn = document.getElementById('analisar-btn');
+            const textoAnaliseInput = document.getElementById('texto-analise-input');
+            const idiomaAnaliseSelect = document.getElementById('idioma-analise-select');
+            const resultadosAnaliseDiv = document.getElementById('resultados-analise-gemini');
 
             // Função genérica para chamar a API Gemini com repetição exponencial
             const callGeminiAPI = async (prompt, outputDiv) => {
@@ -281,6 +303,29 @@
                 } catch (error) {
                     console.error('Erro na chamada da API:', error);
                     resultadosRascunhoDiv.innerHTML = '<p class="text-red-500">Ocorreu um erro ao conectar com o serviço. Verifique o console para mais detalhes.</p>';
+                }
+            });
+
+            // Event listener para o Analisador de Sentimento de Texto
+            analisarBtn.addEventListener('click', async () => {
+                const texto = textoAnaliseInput.value.trim();
+                const idioma = idiomaAnaliseSelect.value;
+                const idiomaText = idiomaAnaliseSelect.options[idiomaAnaliseSelect.selectedIndex].text.replace("Analisar em ", "");
+
+                if (!texto) {
+                    resultadosAnaliseDiv.innerHTML = '<p class="text-red-500">Por favor, insira um texto para ser analisado.</p>';
+                    return;
+                }
+
+                resultadosAnaliseDiv.innerHTML = '<p class="text-gray-500 italic">Analisando o texto, por favor aguarde...</p>';
+
+                const prompt = `Analise o sentimento do seguinte texto em ${idiomaText}: "${texto}". Classifique-o como 'Positivo', 'Negativo' ou 'Neutro' e forneça uma breve justificativa para a sua classificação.`;
+
+                try {
+                    await callGeminiAPI(prompt, resultadosAnaliseDiv);
+                } catch (error) {
+                    console.error('Erro na chamada da API:', error);
+                    resultadosAnaliseDiv.innerHTML = '<p class="text-red-500">Ocorreu um erro ao conectar com o serviço. Verifique o console para mais detalhes.</p>';
                 }
             });
         });
